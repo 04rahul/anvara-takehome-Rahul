@@ -20,10 +20,13 @@ export interface AdSlot {
   name: string;
   description?: string;
   type: 'DISPLAY' | 'VIDEO' | 'NEWSLETTER' | 'PODCAST';
+  width?: number;
+  height?: number;
+  position?: string;
   basePrice: number;
   isAvailable: boolean;
   publisherId: string;
-  publisher?: { id: string; name: string };
+  publisher?: { id: string; name: string; website?: string };
 }
 
 export interface Placement {

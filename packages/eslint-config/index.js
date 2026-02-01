@@ -56,6 +56,8 @@ export const reactConfig = [
       globals: {
         ...globals.browser,
         ...globals.es2022,
+        process: 'readonly',
+        React: 'readonly',
       },
     },
     plugins: {
@@ -66,6 +68,7 @@ export const reactConfig = [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': 'warn',
+      'no-undef': 'off', // TypeScript handles this
     },
   },
   {
