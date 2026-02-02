@@ -1,11 +1,23 @@
+import { getAdSlots } from '@/lib/api';
 import { AdSlotGrid } from './components/ad-slot-grid';
+import type { AdSlot } from '@/lib/types';
 
 // FIXME: This page fetches all ad slots client-side. Consider:
 // 1. Server-side pagination with searchParams
 // 2. Filtering by category, price range, slot type
 // 3. Search functionality
 
-export default function MarketplacePage() {
+export default async function MarketplacePage() {
+  let adSlots: AdSlot[] = [];
+  let error: string | null = null;
+
+  try {
+    adSlots = await getAdSlots(); // No publisherId = get all ad slots
+  } catch (err) {
+    error = 'Failed to load ad slots. Please try again later.';
+    console.error('Failed to load ad slots:', err);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -14,7 +26,7 @@ export default function MarketplacePage() {
         {/* TODO: Add search input and filter controls */}
       </div>
 
-      <AdSlotGrid />
+      <AdSlotGrid adSlots={adSlots} error={error} />
     </div>
   );
 }
