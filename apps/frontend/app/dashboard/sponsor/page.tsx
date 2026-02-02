@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getUserRole } from '@/lib/auth-helpers';
 import { CampaignList } from './components/campaign-list';
+import { getCampaigns } from '@/lib/api';
+import type { Campaign } from '@/lib/types';
+
 
 export default async function SponsorDashboard() {
   const session = await auth.api.getSession({
@@ -19,6 +22,19 @@ export default async function SponsorDashboard() {
     redirect('/');
   }
 
+  let campaigns: Campaign[] = [];
+  let error: string | null = null;
+  
+  try {
+    if (roleData.sponsorId) {
+      campaigns = await getCampaigns(roleData.sponsorId);
+    }
+  } catch (err) {
+    // Set error message - page will still render
+    error = 'Failed to load campaigns. Please try again later.';
+    console.error('Failed to load campaigns:', err);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -26,7 +42,7 @@ export default async function SponsorDashboard() {
         {/* TODO: Add CreateCampaignButton here */}
       </div>
 
-      <CampaignList />
+      <CampaignList campaigns={campaigns} error={error} />
     </div>
   );
 }
