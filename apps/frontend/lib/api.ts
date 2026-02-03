@@ -14,26 +14,43 @@ interface Stats {
   [key: string]: unknown;
 }
 
-export async function api<T>(endpoint: string, options?: RequestInit): Promise<T> {
+/**
+ * API client that works in both client-side and server-side contexts.
+ * For server-side usage, pass cookies via the cookieHeader parameter.
+ */
+export async function api<T>(
+  endpoint: string,
+  options?: RequestInit & { cookieHeader?: string }
+): Promise<T> {
+  const { cookieHeader, ...fetchOptions } = options || {};
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(cookieHeader && { Cookie: cookieHeader }),
+    ...fetchOptions?.headers,
+  };
+
   const res = await fetch(`${API_URL}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
+    headers,
+    credentials: 'include', // For client-side requests
+    ...fetchOptions,
   });
+  
   if (!res.ok) throw new Error('API request failed');
   return res.json();
 }
 
 // Campaigns
-export const getCampaigns = (sponsorId?: string): Promise<Campaign[]> =>
-  api<Campaign[]>(sponsorId ? `/api/campaigns?sponsorId=${sponsorId}` : '/api/campaigns');
+export const getCampaigns = (sponsorId?: string, cookieHeader?: string): Promise<Campaign[]> =>
+  api<Campaign[]>(sponsorId ? `/api/campaigns?sponsorId=${sponsorId}` : '/api/campaigns', { cookieHeader });
 export const getCampaign = (id: string): Promise<Campaign> => api<Campaign>(`/api/campaigns/${id}`);
 export const createCampaign = (data: unknown): Promise<Campaign> =>
   api<Campaign>('/api/campaigns', { method: 'POST', body: JSON.stringify(data) });
 // TODO: Add updateCampaign and deleteCampaign functions
 
 // Ad Slots
-export const getAdSlots = (publisherId?: string): Promise<AdSlot[]> =>
-  api<AdSlot[]>(publisherId ? `/api/ad-slots?publisherId=${publisherId}` : '/api/ad-slots');
+export const getAdSlots = (publisherId?: string, cookieHeader?: string): Promise<AdSlot[]> =>
+  api<AdSlot[]>(publisherId ? `/api/ad-slots?publisherId=${publisherId}` : '/api/ad-slots', { cookieHeader });
 export const getAdSlot = (id: string): Promise<AdSlot> => api<AdSlot>(`/api/ad-slots/${id}`);
 export const createAdSlot = (data: unknown): Promise<AdSlot> =>
   api<AdSlot>('/api/ad-slots', { method: 'POST', body: JSON.stringify(data) });

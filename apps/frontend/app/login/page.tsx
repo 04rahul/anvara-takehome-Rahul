@@ -37,20 +37,23 @@ export default function LoginPage() {
           try {
             const userId = ctx.data?.user?.id;
             if (userId) {
-              const roleRes = await fetch(`${API_URL}/api/auth/role/${userId}`);
+              const roleRes = await fetch(`${API_URL}/api/auth/role/${userId}`, {
+                credentials: 'include',
+              });
               const roleData = await roleRes.json();
+              // Use full page reload to ensure server components get fresh session data
               if (roleData.role === 'sponsor') {
-                router.push('/dashboard/sponsor');
+                window.location.href = '/dashboard/sponsor';
               } else if (roleData.role === 'publisher') {
-                router.push('/dashboard/publisher');
+                window.location.href = '/dashboard/publisher';
               } else {
-                router.push('/');
+                window.location.href = '/';
               }
             } else {
-              router.push('/');
+              window.location.href = '/';
             }
           } catch {
-            router.push('/');
+            window.location.href = '/';
           }
         },
         onError: (ctx) => {

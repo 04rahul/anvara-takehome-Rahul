@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
 import { getParam } from '../utils/helpers.js';
+import { requireAuth, type AuthRequest } from '../auth.js';
 
 const router: IRouter = Router();
 
@@ -16,16 +17,29 @@ router.post('/login', async (_req: Request, res: Response) => {
 });
 
 // GET /api/auth/me - Get current user (for API clients)
-router.get('/me', async (req: Request, res: Response) => {
-  // TODO: Challenge 3 - Implement auth middleware to validate session
-  // For now, return unauthorized
-  res.status(401).json({ error: 'Not authenticated' });
+router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  res.json(req.user);
 });
 
 // GET /api/auth/role/:userId - Get user role based on Sponsor/Publisher records
-router.get('/role/:userId', async (req: Request, res: Response) => {
+router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response) => {
+  
+  
   try {
+    if (!req.user) {
+      console.error('❌ No user attached to request');
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
     const userId = getParam(req.params.userId);
+   
+
+    // Security: Users can only query their own role
+    if (userId !== req.user.id) {
+      res.status(403).json({ error: 'Forbidden: You can only query your own role' });
+      return;
+    }
 
     // Check if user is a sponsor
     const sponsor = await prisma.sponsor.findUnique({

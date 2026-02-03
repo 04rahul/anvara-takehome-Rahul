@@ -1,33 +1,16 @@
-'use client';
-
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { authClient } from '@/auth-client';
+import type { SessionData } from '@/lib/auth-helpers';
+import { LogoutButton } from './logout-button';
 
-type UserRole = 'sponsor' | 'publisher' | null;
+interface NavProps {
+  sessionData: SessionData;
+}
 
-export function Nav() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-  const [role, setRole] = useState<UserRole>(null);
+// TODO: Add active link styling using usePathname() from next/navigation
+// The current page's link should be highlighted differently
 
-  // TODO: Convert to server component and fetch role server-side
-  // Fetch user role from backend when user is logged in
-  useEffect(() => {
-    if (user?.id) {
-      fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291'}/api/auth/role/${user.id}`
-      )
-        .then((res) => res.json())
-        .then((data) => setRole(data.role))
-        .catch(() => setRole(null));
-    } else {
-      setRole(null);
-    }
-  }, [user?.id]);
-
-  // TODO: Add active link styling using usePathname() from next/navigation
-  // The current page's link should be highlighted differently
+export function Nav({ sessionData }: NavProps) {
+  const { user, role } = sessionData;
 
   return (
     <header className="border-b border-[--color-border]">
@@ -61,27 +44,12 @@ export function Nav() {
             </Link>
           )}
 
-          {isPending ? (
-            <span className="text-[--color-muted]">...</span>
-          ) : user ? (
+          {user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-[--color-muted]">
                 {user.name} {role && `(${role})`}
               </span>
-              <button
-                onClick={async () => {
-                  await authClient.signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        window.location.href = '/';
-                      },
-                    },
-                  });
-                }}
-                className="rounded bg-gray-600 px-3 py-1.5 text-sm text-white hover:bg-gray-500"
-              >
-                Logout
-              </button>
+              <LogoutButton />
             </div>
           ) : (
             <Link

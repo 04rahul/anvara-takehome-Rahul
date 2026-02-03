@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getUserRole } from '@/lib/auth-helpers';
@@ -16,8 +16,15 @@ export default async function SponsorDashboard() {
     redirect('/login');
   }
 
+  // Get cookies for server-side API calls
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('better-auth.session_token');
+  const cookieHeader = sessionCookie 
+    ? `better-auth.session_token=${sessionCookie.value}` 
+    : undefined;
+
   // Verify user has 'sponsor' role
-  const roleData = await getUserRole(session.user.id);
+  const roleData = await getUserRole(session.user.id, cookieHeader);
   if (roleData.role !== 'sponsor') {
     redirect('/');
   }
@@ -27,7 +34,7 @@ export default async function SponsorDashboard() {
   
   try {
     if (roleData.sponsorId) {
-      campaigns = await getCampaigns(roleData.sponsorId);
+      campaigns = await getCampaigns(roleData.sponsorId, cookieHeader);
     }
   } catch (err) {
     // Set error message - page will still render

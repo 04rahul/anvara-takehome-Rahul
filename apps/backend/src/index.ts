@@ -8,8 +8,18 @@ const PORT = process.env.BACKEND_PORT || 4291;
 // Middleware
 // FIXME: CORS is configured with defaults - for production, specify allowed origins
 // TODO: Add rate limiting middleware to prevent abuse (e.g., express-rate-limit)
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3847',
+  credentials: true, // Allow cookies to be sent with cross-origin requests
+}));
 app.use(express.json());
+
+// Request logging middleware (for debugging)
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.path}`);
+  console.log(`📨 Cookies:`, req.headers.cookie || 'none');
+  next();
+});
 
 // Mount all API routes
 app.use('/api', routes);
