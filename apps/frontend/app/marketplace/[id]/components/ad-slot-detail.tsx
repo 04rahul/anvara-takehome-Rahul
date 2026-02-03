@@ -3,22 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAdSlot } from '@/lib/api';
-import { authClient } from '@/auth-client';
 import { logger } from '@/lib/utils';
+import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-interface RoleInfo {
-  role: 'sponsor' | 'publisher' | null;
-  sponsorId?: string;
-  publisherId?: string;
-  name?: string;
-}
+import type { RoleData } from '@/lib/auth-helpers';
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -32,45 +20,25 @@ interface Props {
 }
 
 export function AdSlotDetail({ id }: Props) {
+  // Get session data from context (server-fetched)
+  const sessionData = useSession();
+  const user = sessionData.user;
+  const roleInfo: RoleData | null = sessionData.roleData;
+
   const [adSlot, setAdSlot] = useState<AdSlot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [roleInfo, setRoleInfo] = useState<RoleInfo | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [booking, setBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch ad slot
+    // Only fetch ad slot - session data comes from context
     getAdSlot(id)
       .then(setAdSlot)
       .catch(() => setError('Failed to load ad slot details'))
       .finally(() => setLoading(false));
-
-    // Check user session and fetch role
-    authClient
-      .getSession()
-      .then(({ data }) => {
-        if (data?.user) {
-          const sessionUser = data.user as User;
-          setUser(sessionUser);
-
-          // Fetch role info from backend
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291'}/api/auth/role/${sessionUser.id}`
-          )
-            .then((res) => res.json())
-            .then((data) => setRoleInfo(data))
-            .catch(() => setRoleInfo(null))
-            .finally(() => setRoleLoading(false));
-        } else {
-          setRoleLoading(false);
-        }
-      })
-      .catch(() => setRoleLoading(false));
   }, [id]);
 
   const handleBooking = async () => {
@@ -85,6 +53,7 @@ export function AdSlotDetail({ id }: Props) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Include cookies for authentication
           body: JSON.stringify({
             sponsorId: roleInfo.sponsorId,
             message: message || undefined,
@@ -212,9 +181,7 @@ export function AdSlotDetail({ id }: Props) {
           <div className="mt-6 border-t border-[--color-border] pt-6">
             <h2 className="mb-4 text-lg font-semibold">Request This Placement</h2>
 
-            {roleLoading ? (
-              <div className="py-4 text-center text-[--color-muted]">Loading...</div>
-            ) : roleInfo?.role === 'sponsor' && roleInfo?.sponsorId ? (
+            {roleInfo?.role === 'sponsor' && roleInfo?.sponsorId ? (
               <div className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[--color-muted]">

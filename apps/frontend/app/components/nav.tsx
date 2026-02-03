@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { SessionData } from '@/lib/auth-helpers';
 import { LogoutButton } from './logout-button';
 
@@ -6,40 +9,51 @@ interface NavProps {
   sessionData: SessionData;
 }
 
-// TODO: Add active link styling using usePathname() from next/navigation
-// The current page's link should be highlighted differently
-
 export function Nav({ sessionData }: NavProps) {
   const { user, role } = sessionData;
+  const pathname = usePathname();
+
+  // Use startsWith for nested routes (e.g., /dashboard/sponsor/campaigns highlights "My Campaigns")
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(path);
+  };
+
+  const getLinkClassName = (path: string) => {
+    if (isActive(path)) {
+      return 'text-[--color-primary] font-medium border-b-2 border-[--color-primary] pb-1';
+    }
+    return 'text-[--color-muted] hover:text-[--color-foreground]';
+  };
 
   return (
     <header className="border-b border-[--color-border]">
       <nav className="mx-auto flex max-w-6xl items-center justify-between p-4">
-        <Link href="/" className="text-xl font-bold text-[--color-primary]">
+        <Link
+          href="/"
+          className={`text-xl font-bold ${
+            isActive('/')
+              ? 'text-[--color-primary]'
+              : 'text-[--color-primary] hover:opacity-80'
+          }`}
+        >
           Anvara
         </Link>
 
         <div className="flex items-center gap-6">
-          <Link
-            href="/marketplace"
-            className="text-[--color-muted] hover:text-[--color-foreground]"
-          >
+          <Link href="/marketplace" className={getLinkClassName('/marketplace')}>
             Marketplace
           </Link>
 
           {user && role === 'sponsor' && (
-            <Link
-              href="/dashboard/sponsor"
-              className="text-[--color-muted] hover:text-[--color-foreground]"
-            >
+            <Link href="/dashboard/sponsor" className={getLinkClassName('/dashboard/sponsor')}>
               My Campaigns
             </Link>
           )}
           {user && role === 'publisher' && (
-            <Link
-              href="/dashboard/publisher"
-              className="text-[--color-muted] hover:text-[--color-foreground]"
-            >
+            <Link href="/dashboard/publisher" className={getLinkClassName('/dashboard/publisher')}>
               My Ad Slots
             </Link>
           )}
@@ -54,7 +68,11 @@ export function Nav({ sessionData }: NavProps) {
           ) : (
             <Link
               href="/login"
-              className="rounded bg-[--color-primary] px-4 py-2 text-sm text-white hover:bg-[--color-primary-hover]"
+              className={`rounded px-4 py-2 text-sm text-white transition-colors ${
+                isActive('/login')
+                  ? 'bg-[--color-primary-hover]'
+                  : 'bg-[--color-primary] hover:bg-[--color-primary-hover]'
+              }`}
             >
               Login
             </Link>

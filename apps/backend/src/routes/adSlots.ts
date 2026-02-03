@@ -35,14 +35,9 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/ad-slots/:id - Get single ad slot with details (verify ownership)
-router.get('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthRequest, res: Response) => {
+// GET /api/ad-slots/:id - Get single ad slot with details (public for marketplace)
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
-
     const id = getParam(req.params.id);
     const adSlot = await prisma.adSlot.findUnique({
       where: { id },
@@ -61,12 +56,7 @@ router.get('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthR
       return;
     }
 
-    // Verify ownership
-    if (adSlot.publisherId !== req.user.publisherId!) {
-      res.status(403).json({ error: 'Forbidden: You do not have access to this ad slot' });
-      return;
-    }
-
+    // Return public ad slot details (accessible to all users)
     res.json(adSlot);
   } catch (error) {
     console.error('Error fetching ad slot:', error);

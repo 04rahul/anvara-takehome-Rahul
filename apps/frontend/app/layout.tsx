@@ -3,6 +3,7 @@ import type React from 'react';
 import './globals.css';
 import { Nav } from './components/nav';
 import { getServerSession } from '@/lib/auth-helpers';
+import { SessionProvider } from '@/lib/session-context';
 
 // TODO: Add ErrorBoundary wrapper for graceful error handling
 // TODO: Consider adding a loading.tsx for Suspense boundaries
@@ -25,8 +26,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <Nav sessionData={sessionData} />
-        <main className="mx-auto max-w-6xl p-4">{children}</main>
+        <SessionProvider sessionData={sessionData}>
+          <Nav sessionData={sessionData} />
+          <main className="mx-auto max-w-6xl p-4">{children}</main>
+        </SessionProvider>
       </body>
     </html>
   );
