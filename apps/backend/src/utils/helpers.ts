@@ -71,3 +71,177 @@ export function formatDate(date: string | Date): string {
   // BUG: Doesn't handle invalid dates
   return new Date(date).toLocaleDateString();
 }
+
+// ============================================================================
+// INPUT VALIDATION HELPERS
+// ============================================================================
+
+/**
+ * Custom error class for validation errors
+ */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+/**
+ * Validates and sanitizes a string input
+ * - Checks if value is a valid string
+ * - Trims whitespace
+ * @param value - The value to validate
+ * @param fieldName - Name of the field for error messages
+ * @param options - Validation options
+ * @returns Sanitized string or throws ValidationError
+ */
+export function validateString(
+  value: unknown,
+  fieldName: string,
+  options: {
+    required?: boolean;
+    maxLength?: number;
+    minLength?: number;
+    allowEmpty?: boolean;
+  } = {}
+): string {
+  const { required = false, maxLength, minLength, allowEmpty = true } = options;
+
+  // Check if value is provided
+  if (value === undefined || value === null) {
+    if (required) {
+      throw new ValidationError(`${fieldName} is required`);
+    }
+    return '';
+  }
+
+  // Check if value is a string
+  if (typeof value !== 'string') {
+    throw new ValidationError(`${fieldName} must be a string`);
+  }
+
+  // Trim whitespace
+  const sanitized = value.trim();
+
+  // Check if empty after trim
+  if (!allowEmpty && sanitized.length === 0) {
+    throw new ValidationError(`${fieldName} cannot be empty`);
+  }
+
+  // Check min length
+  if (minLength !== undefined && sanitized.length < minLength) {
+    throw new ValidationError(`${fieldName} must be at least ${minLength} characters`);
+  }
+
+  // Check max length
+  if (maxLength !== undefined && sanitized.length > maxLength) {
+    throw new ValidationError(`${fieldName} must be at most ${maxLength} characters`);
+  }
+
+  return sanitized;
+}
+
+/**
+ * Validates and converts a value to a positive integer
+ * @param value - The value to validate
+ * @param fieldName - Name of the field for error messages
+ * @param options - Validation options
+ * @returns Validated integer or null if optional and not provided
+ */
+export function validateInteger(
+  value: unknown,
+  fieldName: string,
+  options: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+    allowNull?: boolean;
+  } = {}
+): number | null {
+  const { required = false, min, max, allowNull = true } = options;
+
+  // Check if value is provided
+  if (value === undefined || value === null) {
+    if (required) {
+      throw new ValidationError(`${fieldName} is required`);
+    }
+    return allowNull ? null : undefined as any;
+  }
+
+  // Convert to number
+  const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+
+  // Check if it's a valid number
+  if (isNaN(num) || !isFinite(num)) {
+    throw new ValidationError(`${fieldName} must be a valid number`);
+  }
+
+  // Check if it's an integer
+  if (!Number.isInteger(num)) {
+    throw new ValidationError(`${fieldName} must be an integer`);
+  }
+
+  // Check if it's positive
+  if (num < 0) {
+    throw new ValidationError(`${fieldName} must be a positive integer`);
+  }
+
+  // Check min value
+  if (min !== undefined && num < min) {
+    throw new ValidationError(`${fieldName} must be at least ${min}`);
+  }
+
+  // Check max value
+  if (max !== undefined && num > max) {
+    throw new ValidationError(`${fieldName} must be at most ${max}`);
+  }
+
+  return num;
+}
+
+/**
+ * Validates a decimal/number value
+ * @param value - The value to validate
+ * @param fieldName - Name of the field for error messages
+ * @param options - Validation options
+ * @returns Validated number
+ */
+export function validateDecimal(
+  value: unknown,
+  fieldName: string,
+  options: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+  } = {}
+): number {
+  const { required = false, min, max } = options;
+
+  // Check if value is provided
+  if (value === undefined || value === null) {
+    if (required) {
+      throw new ValidationError(`${fieldName} is required`);
+    }
+    throw new ValidationError(`${fieldName} is required`);
+  }
+
+  // Convert to number
+  const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+
+  // Check if it's a valid number
+  if (isNaN(num) || !isFinite(num)) {
+    throw new ValidationError(`${fieldName} must be a valid number`);
+  }
+
+  // Check min value
+  if (min !== undefined && num < min) {
+    throw new ValidationError(`${fieldName} must be at least ${min}`);
+  }
+
+  // Check max value
+  if (max !== undefined && num > max) {
+    throw new ValidationError(`${fieldName} must be at most ${max}`);
+  }
+
+  return num;
+}

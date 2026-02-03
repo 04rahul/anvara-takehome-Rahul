@@ -1,6 +1,7 @@
 import { Router, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
-import { getParam } from '../utils/helpers.js';
+import { CampaignStatus } from '../generated/prisma/client.js';
+import { getParam, validateString, validateDecimal, ValidationError } from '../utils/helpers.js';
 import { requireAuth, roleMiddleware, type AuthRequest } from '../auth.js';
 
 const router: IRouter = Router();
@@ -18,7 +19,7 @@ router.get('/', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReques
     const campaigns = await prisma.campaign.findMany({
       where: {
         sponsorId: req.user.sponsorId!, // Only return user's own campaigns
-        ...(status && { status: status as string as 'ACTIVE' | 'PAUSED' | 'COMPLETED' }),
+        ...(status && { status: status as string as CampaignStatus }),
       },
       include: {
         sponsor: { select: { id: true, name: true, logo: true } },
@@ -95,39 +96,278 @@ router.post('/', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReque
       targetRegions,
     } = req.body;
 
-    if (!name || !budget || !startDate || !endDate) {
-      res.status(400).json({
-        error: 'Name, budget, startDate, and endDate are required',
+    try {
+      // Validate and sanitize input fields
+      const validatedData = {
+        name: validateString(name, 'name', { required: true, minLength: 1, maxLength: 255, allowEmpty: false }),
+        description: description !== undefined && description !== null
+          ? validateString(description, 'description', { required: false, maxLength: 1000, allowEmpty: true })
+          : null,
+        budget: validateDecimal(budget, 'budget', { required: true, min: 1, max: 10000 }),
+        cpmRate: cpmRate !== undefined && cpmRate !== null
+          ? validateDecimal(cpmRate, 'cpmRate', { required: false, min: 0, max: 999999.99 })
+          : undefined,
+        cpcRate: cpcRate !== undefined && cpcRate !== null
+          ? validateDecimal(cpcRate, 'cpcRate', { required: false, min: 0, max: 999999.99 })
+          : undefined,
+        startDate: (() => {
+          if (!startDate) {
+            throw new ValidationError('startDate is required');
+          }
+          const date = new Date(startDate);
+          if (isNaN(date.getTime())) {
+            throw new ValidationError('startDate must be a valid date');
+          }
+          return date;
+        })(),
+        endDate: (() => {
+          if (!endDate) {
+            throw new ValidationError('endDate is required');
+          }
+          const date = new Date(endDate);
+          if (isNaN(date.getTime())) {
+            throw new ValidationError('endDate must be a valid date');
+          }
+          return date;
+        })(),
+        targetCategories: Array.isArray(targetCategories) ? targetCategories : [],
+        targetRegions: Array.isArray(targetRegions) ? targetRegions : [],
+      };
+
+      // Validate date relationship
+      if (validatedData.startDate >= validatedData.endDate) {
+        throw new ValidationError('startDate must be before endDate');
+      }
+
+      const campaign = await prisma.campaign.create({
+        data: {
+          ...validatedData,
+          sponsorId: req.user.sponsorId!,
+        },
+        include: {
+          sponsor: { select: { id: true, name: true } },
+        },
       });
-      return;
+
+      res.status(201).json(campaign);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      console.error('Error creating campaign:', error);
+      res.status(500).json({ error: 'Failed to create campaign' });
     }
-
-    const campaign = await prisma.campaign.create({
-      data: {
-        name,
-        description,
-        budget,
-        cpmRate,
-        cpcRate,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        targetCategories: targetCategories || [],
-        targetRegions: targetRegions || [],
-        sponsorId: req.user.sponsorId!, // Use authenticated user's sponsorId
-      },
-      include: {
-        sponsor: { select: { id: true, name: true } },
-      },
-    });
-
-    res.status(201).json(campaign);
   } catch (error) {
     console.error('Error creating campaign:', error);
     res.status(500).json({ error: 'Failed to create campaign' });
   }
 });
 
-// TODO: Add PUT /api/campaigns/:id endpoint
-// Update campaign details (name, budget, dates, status, etc.)
+// PUT /api/campaigns/:id - Update campaign details (verify ownership)
+router.put('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const id = getParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Invalid campaign ID' });
+      return;
+    }
+
+    const {
+      name,
+      description,
+      budget,
+      cpmRate,
+      cpcRate,
+      startDate,
+      endDate,
+      targetCategories,
+      targetRegions,
+      status,
+    } = req.body;
+
+    // Verify ownership - check campaign exists and user owns it
+    const existingCampaign = await prisma.campaign.findFirst({
+      where: {
+        id,
+        sponsor: { userId: req.user.id }, // Ownership check
+      },
+    });
+
+    if (!existingCampaign) {
+      // Returns 404 for both "not found" and "not owned"
+      res.status(404).json({ error: 'Campaign not found' });
+      return;
+    }
+
+    // Build update data object with only provided fields
+    try {
+      const updateData: any = {};
+
+      if (name !== undefined) {
+        updateData.name = validateString(name, 'name', { required: false, minLength: 1, maxLength: 255, allowEmpty: false });
+      }
+
+      if (description !== undefined) {
+        updateData.description = description === null || description === ''
+          ? null
+          : validateString(description, 'description', { required: false, maxLength: 1000, allowEmpty: true });
+      }
+
+      if (budget !== undefined) {
+        updateData.budget = validateDecimal(budget, 'budget', { required: true, min: 1, max: 10000 });
+      }
+
+      if (cpmRate !== undefined) {
+        updateData.cpmRate = cpmRate === null
+          ? null
+          : validateDecimal(cpmRate, 'cpmRate', { required: false, min: 0, max: 999999.99 });
+      }
+
+      if (cpcRate !== undefined) {
+        updateData.cpcRate = cpcRate === null
+          ? null
+          : validateDecimal(cpcRate, 'cpcRate', { required: false, min: 0, max: 999999.99 });
+      }
+
+      if (targetCategories !== undefined) {
+        updateData.targetCategories = Array.isArray(targetCategories) ? targetCategories : [];
+      }
+
+      if (targetRegions !== undefined) {
+        updateData.targetRegions = Array.isArray(targetRegions) ? targetRegions : [];
+      }
+
+      if (status !== undefined) {
+        const validStatuses = Object.values(CampaignStatus);
+        if (!validStatuses.includes(status)) {
+          res.status(400).json({ error: `Invalid status value. Must be one of: ${validStatuses.join(', ')}` });
+          return;
+        }
+        updateData.status = status;
+      }
+
+      // Validate dates
+      const now = new Date();
+      const existingStartDate = new Date(existingCampaign.startDate);
+
+      // If startDate is being updated and existing startDate is in the past, don't allow it
+      if (startDate !== undefined && existingStartDate < now) {
+        throw new ValidationError('Cannot edit startDate for campaigns that have already started');
+      }
+
+      // Validate startDate if provided (must be in the future)
+      if (startDate !== undefined) {
+        const newStartDate = new Date(startDate);
+        if (isNaN(newStartDate.getTime())) {
+          throw new ValidationError('startDate must be a valid date');
+        }
+        if (newStartDate < now) {
+          throw new ValidationError('startDate must be in the future');
+        }
+        updateData.startDate = newStartDate;
+      }
+
+      // Validate endDate if provided (must be in the future, but can be edited even if campaign started)
+      if (endDate !== undefined) {
+        const newEndDate = new Date(endDate);
+        if (isNaN(newEndDate.getTime())) {
+          throw new ValidationError('endDate must be a valid date');
+        }
+        if (newEndDate < now) {
+          throw new ValidationError('endDate must be in the future');
+        }
+        updateData.endDate = newEndDate;
+      }
+
+      // Validate date relationship if both are provided
+      if (updateData.startDate && updateData.endDate) {
+        if (updateData.startDate >= updateData.endDate) {
+          throw new ValidationError('startDate must be before endDate');
+        }
+      }
+
+      // Also validate against existing dates if only one is being updated
+      if (startDate !== undefined && endDate === undefined) {
+        const newStartDate = new Date(startDate);
+        if (newStartDate >= new Date(existingCampaign.endDate)) {
+          throw new ValidationError('startDate must be before existing endDate');
+        }
+      }
+
+      if (endDate !== undefined && startDate === undefined) {
+        const newEndDate = new Date(endDate);
+        if (newEndDate <= new Date(existingCampaign.startDate)) {
+          throw new ValidationError('endDate must be after existing startDate');
+        }
+      }
+
+      const updatedCampaign = await prisma.campaign.update({
+        where: { id },
+        data: updateData,
+        include: {
+          sponsor: { select: { id: true, name: true } },
+          _count: { select: { creatives: true, placements: true } },
+        },
+      });
+
+      res.status(200).json(updatedCampaign);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      console.error('Error updating campaign:', error);
+      res.status(500).json({ error: 'Failed to update campaign' });
+    }
+  } catch (error) {
+    console.error('Error updating campaign:', error);
+    res.status(500).json({ error: 'Failed to update campaign' });
+  }
+});
+
+// DELETE /api/campaigns/:id - Delete campaign (verify ownership)
+router.delete('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const id = getParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ error: 'Invalid campaign ID' });
+      return;
+    }
+
+    // Verify ownership - check campaign exists and user owns it
+    const campaign = await prisma.campaign.findFirst({
+      where: {
+        id,
+        sponsor: { userId: req.user.id }, // Ownership check
+      },
+    });
+
+    if (!campaign) {
+      // Returns 404 for both "not found" and "not owned"
+      res.status(404).json({ error: 'Campaign not found' });
+      return;
+    }
+
+    await prisma.campaign.delete({
+      where: { id },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting campaign:', error);
+    res.status(500).json({ error: 'Failed to delete campaign' });
+  }
+});
 
 export default router;
