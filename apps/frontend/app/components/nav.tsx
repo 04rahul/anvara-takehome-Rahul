@@ -2,14 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { SessionData } from '@/lib/auth-helpers';
+import { useSession } from '@/lib/session-context';
 import { LogoutButton } from './logout-button';
 
-interface NavProps {
-  sessionData: SessionData;
-}
-
-export function Nav({ sessionData }: NavProps) {
+export function Nav() {
+  const sessionData = useSession();
   const { user, role } = sessionData;
   const pathname = usePathname();
 
