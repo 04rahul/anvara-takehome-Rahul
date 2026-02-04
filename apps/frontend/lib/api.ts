@@ -68,9 +68,49 @@ export const deleteCampaign = async (id: string, cookieHeader?: string): Promise
   // DELETE returns 204 No Content, so no body to parse
 };
 
+// Pagination types
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
 // Ad Slots
-export const getAdSlots = (publisherId?: string, cookieHeader?: string): Promise<AdSlot[]> =>
-  api<AdSlot[]>(publisherId ? `/api/ad-slots?publisherId=${publisherId}` : '/api/ad-slots', { cookieHeader });
+export const getAdSlots = (params?: {
+  publisherId?: string;
+  type?: string;
+  available?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  sortBy?: string;
+  search?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}, cookieHeader?: string): Promise<PaginatedResponse<AdSlot>> => {
+  const queryParams = new URLSearchParams();
+  if (params?.publisherId) queryParams.set('publisherId', params.publisherId);
+  if (params?.type) queryParams.set('type', params.type);
+  if (params?.available) queryParams.set('available', params.available);
+  if (params?.minPrice) queryParams.set('minPrice', params.minPrice);
+  if (params?.maxPrice) queryParams.set('maxPrice', params.maxPrice);
+  if (params?.sortBy) queryParams.set('sortBy', params.sortBy);
+  if (params?.search) queryParams.set('search', params.search);
+  if (params?.category) queryParams.set('category', params.category);
+  if (params?.page) queryParams.set('page', String(params.page));
+  if (params?.limit) queryParams.set('limit', String(params.limit));
+  
+  const query = queryParams.toString();
+  return api<PaginatedResponse<AdSlot>>(
+    `/api/ad-slots${query ? `?${query}` : ''}`, 
+    { cookieHeader }
+  );
+};
 export const getAdSlot = (id: string): Promise<AdSlot> => api<AdSlot>(`/api/ad-slots/${id}`);
 export const createAdSlot = (data: unknown, cookieHeader?: string): Promise<AdSlot> =>
   api<AdSlot>('/api/ad-slots', { method: 'POST', body: JSON.stringify(data), cookieHeader });

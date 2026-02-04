@@ -15,6 +15,12 @@ const typeColors: Record<string, string> = {
   PODCAST: 'bg-orange-100 text-orange-700',
 };
 
+function formatViews(views: number): string {
+  if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+  if (views >= 1000) return `${(views / 1000).toFixed(0)}K`;
+  return views.toString();
+}
+
 interface Props {
   id: string;
 }
@@ -127,23 +133,47 @@ export function AdSlotDetail({ id }: Props) {
           <div>
             <h1 className="text-2xl font-bold">{adSlot.name}</h1>
             {adSlot.publisher && (
-              <p className="text-[--color-muted]">
-                by {adSlot.publisher.name}
-                {adSlot.publisher.website && (
-                  <>
-                    {' '}
-                    ·{' '}
-                    <a
-                      href={adSlot.publisher.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[--color-primary] hover:underline"
-                    >
-                      {adSlot.publisher.website}
-                    </a>
-                  </>
-                )}
-              </p>
+              <div className="mt-2 space-y-1">
+                <p className="text-[--color-muted]">
+                  by {adSlot.publisher.name}
+                  {adSlot.publisher.website && (
+                    <>
+                      {' '}
+                      ·{' '}
+                      <a
+                        href={adSlot.publisher.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[--color-primary] hover:underline"
+                      >
+                        {adSlot.publisher.website}
+                      </a>
+                    </>
+                  )}
+                </p>
+                
+                {/* Publisher Stats */}
+                <div className="flex items-center gap-4 text-sm text-[--color-muted]">
+                  {adSlot.publisher.category && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-blue-700 font-medium">
+                      <span>●</span>
+                      {adSlot.publisher.category}
+                    </span>
+                  )}
+                  {adSlot.publisher.monthlyViews && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-base">📊</span>
+                      <strong>{formatViews(adSlot.publisher.monthlyViews)}</strong> monthly views
+                    </span>
+                  )}
+                  {adSlot._count && adSlot._count.placements > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-base">✓</span>
+                      {adSlot._count.placements} {adSlot._count.placements === 1 ? 'booking' : 'bookings'}
+                    </span>
+                  )}
+                </div>
+              </div>
             )}
           </div>
           <span className={`rounded px-3 py-1 text-sm ${typeColors[adSlot.type] || 'bg-gray-100'}`}>

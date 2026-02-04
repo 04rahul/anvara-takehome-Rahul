@@ -34,7 +34,8 @@ export default async function PublisherDashboard() {
 
   try {
     if (roleData.publisherId) {
-      adSlots = await getAdSlots(roleData.publisherId, cookieHeader);
+      const response = await getAdSlots({ publisherId: roleData.publisherId }, cookieHeader);
+      adSlots = response.data;
     }
   } catch (err) {
     error = 'Failed to load ad slots. Please try again later.';

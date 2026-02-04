@@ -9,7 +9,11 @@ const router: IRouter = Router();
 // GET /api/ad-slots - List available ad slots (public marketplace, or filtered by publisherId)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { type, available, publisherId } = req.query;
+    const { type, available, publisherId, minPrice, maxPrice, sortBy, search, category } = req.query;
+    
+    // Pagination params
+    const requestedPage = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
 
     const whereClause: any = {
       ...(type && {
@@ -20,16 +24,85 @@ router.get('/', async (req: Request, res: Response) => {
       ...(publisherId && { publisherId: getParam(publisherId) }),
     };
 
+    // Category filter - filter by publisher category
+    if (category && typeof category === 'string') {
+      whereClause.publisher = {
+        ...whereClause.publisher,
+        category: {
+          equals: category,
+          mode: 'insensitive',
+        },
+      };
+    }
+
+    // Search across name, description, and publisher name
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchTerm = search.trim();
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { publisher: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      ];
+    }
+
+    // Price range filtering
+    if (minPrice || maxPrice) {
+      whereClause.basePrice = {};
+      if (minPrice) {
+        whereClause.basePrice.gte = parseFloat(minPrice as string);
+      }
+      if (maxPrice) {
+        whereClause.basePrice.lte = parseFloat(maxPrice as string);
+      }
+    }
+
+    // Dynamic sorting
+    let orderBy: any = { basePrice: 'desc' }; // default
+    if (sortBy === 'price-asc') orderBy = { basePrice: 'asc' };
+    if (sortBy === 'price-desc') orderBy = { basePrice: 'desc' };
+    if (sortBy === 'name-asc') orderBy = { name: 'asc' };
+    if (sortBy === 'name-desc') orderBy = { name: 'desc' };
+
+    // Get total count first to validate page number
+    const total = await prisma.adSlot.count({ where: whereClause });
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    // Validate and correct page number (handle invalid pages)
+    let actualPage = requestedPage;
+    if (requestedPage < 1) {
+      actualPage = 1; // Negative or zero page → page 1
+    } else if (requestedPage > totalPages && total > 0) {
+      actualPage = totalPages; // Beyond last page → last page
+    } else if (total === 0) {
+      actualPage = 1; // No results → page 1
+    }
+
+    const skip = (actualPage - 1) * limit;
+
+    // Fetch data with corrected page
     const adSlots = await prisma.adSlot.findMany({
       where: whereClause,
+      skip,
+      take: limit,
       include: {
         publisher: { select: { id: true, name: true, category: true, monthlyViews: true } },
         _count: { select: { placements: true } },
       },
-      orderBy: { basePrice: 'desc' },
+      orderBy,
     });
 
-    res.json(adSlots);
+    // Return paginated response with actual page used
+    res.json({
+      data: adSlots,
+      pagination: {
+        page: actualPage,        // Actual page returned
+        requestedPage,            // What user asked for (for debugging)
+        limit,
+        total,
+        totalPages,
+        hasMore: actualPage < totalPages,
+      }
+    });
   } catch (error) {
     console.error('Error fetching ad slots:', error);
     res.status(500).json({ error: 'Failed to fetch ad slots' });
