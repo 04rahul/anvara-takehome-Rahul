@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getUserRole } from '@/lib/auth-helpers';
 import { CampaignList } from './components/campaign-list';
+import { CreateCampaignButton } from './components/create-campaign-button';
 import { getCampaigns } from '@/lib/api';
 import type { Campaign } from '@/lib/types';
 
@@ -46,7 +47,7 @@ export default async function SponsorDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">My Campaigns</h1>
-        {/* TODO: Add CreateCampaignButton here */}
+        <CreateCampaignButton />
       </div>
 
       <CampaignList campaigns={campaigns} error={error} />

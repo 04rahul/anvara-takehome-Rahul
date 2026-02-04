@@ -36,7 +36,10 @@ export async function api<T>(
     ...fetchOptions,
   });
   
-  if (!res.ok) throw new Error('API request failed');
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'API request failed' }));
+    throw new Error(error.error || 'API request failed');
+  }
   return res.json();
 }
 
@@ -44,17 +47,51 @@ export async function api<T>(
 export const getCampaigns = (sponsorId?: string, cookieHeader?: string): Promise<Campaign[]> =>
   api<Campaign[]>(sponsorId ? `/api/campaigns?sponsorId=${sponsorId}` : '/api/campaigns', { cookieHeader });
 export const getCampaign = (id: string): Promise<Campaign> => api<Campaign>(`/api/campaigns/${id}`);
-export const createCampaign = (data: unknown): Promise<Campaign> =>
-  api<Campaign>('/api/campaigns', { method: 'POST', body: JSON.stringify(data) });
-// TODO: Add updateCampaign and deleteCampaign functions
+export const createCampaign = (data: unknown, cookieHeader?: string): Promise<Campaign> =>
+  api<Campaign>('/api/campaigns', { method: 'POST', body: JSON.stringify(data), cookieHeader });
+export const updateCampaign = (id: string, data: unknown, cookieHeader?: string): Promise<Campaign> =>
+  api<Campaign>(`/api/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data), cookieHeader });
+export const deleteCampaign = async (id: string, cookieHeader?: string): Promise<void> => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(cookieHeader && { Cookie: cookieHeader }),
+  };
+  const res = await fetch(`${API_URL}/api/campaigns/${id}`, {
+    headers,
+    credentials: 'include',
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'API request failed' }));
+    throw new Error(error.error || 'API request failed');
+  }
+  // DELETE returns 204 No Content, so no body to parse
+};
 
 // Ad Slots
 export const getAdSlots = (publisherId?: string, cookieHeader?: string): Promise<AdSlot[]> =>
   api<AdSlot[]>(publisherId ? `/api/ad-slots?publisherId=${publisherId}` : '/api/ad-slots', { cookieHeader });
 export const getAdSlot = (id: string): Promise<AdSlot> => api<AdSlot>(`/api/ad-slots/${id}`);
-export const createAdSlot = (data: unknown): Promise<AdSlot> =>
-  api<AdSlot>('/api/ad-slots', { method: 'POST', body: JSON.stringify(data) });
-// TODO: Add updateAdSlot, deleteAdSlot functions
+export const createAdSlot = (data: unknown, cookieHeader?: string): Promise<AdSlot> =>
+  api<AdSlot>('/api/ad-slots', { method: 'POST', body: JSON.stringify(data), cookieHeader });
+export const updateAdSlot = (id: string, data: unknown, cookieHeader?: string): Promise<AdSlot> =>
+  api<AdSlot>(`/api/ad-slots/${id}`, { method: 'PUT', body: JSON.stringify(data), cookieHeader });
+export const deleteAdSlot = async (id: string, cookieHeader?: string): Promise<void> => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(cookieHeader && { Cookie: cookieHeader }),
+  };
+  const res = await fetch(`${API_URL}/api/ad-slots/${id}`, {
+    headers,
+    credentials: 'include',
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'API request failed' }));
+    throw new Error(error.error || 'API request failed');
+  }
+  // DELETE returns 204 No Content, so no body to parse
+};
 
 // Placements
 export const getPlacements = (): Promise<Placement[]> => api<Placement[]>('/api/placements');

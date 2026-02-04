@@ -8,9 +8,13 @@ export interface Campaign {
   description?: string;
   budget: number;
   spent: number;
+  cpmRate?: number;
+  cpcRate?: number;
   status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
   startDate: string;
   endDate: string;
+  targetCategories?: string[];
+  targetRegions?: string[];
   sponsorId: string;
   sponsor?: { id: string; name: string };
 }
