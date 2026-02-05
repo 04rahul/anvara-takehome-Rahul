@@ -1,17 +1,53 @@
 import express, { type Application } from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import routes from './routes/index.js';
 
 const app: Application = express();
 const PORT = process.env.BACKEND_PORT || 4291;
 
 // Middleware
-// FIXME: CORS is configured with defaults - for production, specify allowed origins
-// TODO: Add rate limiting middleware to prevent abuse (e.g., express-rate-limit)
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3847',
-  credentials: true, // Allow cookies to be sent with cross-origin requests
-}));
+// CORS: Allowlist for production (and still works in dev)
+// - Configure one origin via FRONTEND_URL, or multiple via FRONTEND_URLS (comma-separated)
+// - Example: FRONTEND_URLS="https://app.example.com,https://admin.example.com"
+const allowedOrigins = new Set(
+  (process.env.FRONTEND_URL ??
+    'http://localhost:3847')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow requests with no origin (curl/Postman/mobile apps) and same-origin requests
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
+    credentials: true, // needed for cookies/auth headers
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+
+// Rate limiting (basic abuse protection). Tune limits as needed.
+app.use(
+  '/api',
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 300, // per IP, per window
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+  }),
+);
+
+
 app.use(express.json());
 
 // Request logging middleware (for debugging)
