@@ -4,6 +4,7 @@ import './globals.css';
 import { Nav } from './components/nav';
 import { getServerSession } from '@/lib/auth-helpers';
 import { SessionProvider } from '@/lib/session-context';
+import { ABTestDebugger } from './components/ab-test-debugger';
 
 // TODO: Add ErrorBoundary wrapper for graceful error handling
 // TODO: Consider adding a loading.tsx for Suspense boundaries
@@ -29,6 +30,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SessionProvider sessionData={sessionData}>
           <Nav />
           <main className="mx-auto max-w-6xl p-4">{children}</main>
+          {/* A/B Test Debugger - Development Only */}
+          {process.env.NODE_ENV === 'development' && <ABTestDebugger />}
         </SessionProvider>
       </body>
     </html>

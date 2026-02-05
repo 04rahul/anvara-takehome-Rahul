@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { useMarketplaceCtaTest } from '@/hooks/use-ab-test';
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -29,6 +30,9 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [message, setMessage] = useState('');
+  
+  // A/B Test: Button style variant
+  const buttonVariant = useMarketplaceCtaTest();
 
   const handleBookNowClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -109,10 +113,15 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
         </Link>
 
         {/* Book Now Button - outside Link to prevent navigation */}
+        {/* A/B Test: Solid vs Outline button style */}
         {showBookButton && slot.isAvailable && (
           <button
             onClick={handleBookNowClick}
-            className="w-full rounded-lg bg-[--color-primary] px-4 py-2 font-semibold text-white hover:bg-[--color-primary-hover] transition-colors"
+            className={
+              buttonVariant === 'outline'
+                ? 'w-full rounded-lg border-2 border-[--color-primary] bg-transparent px-4 py-2 font-semibold text-[--color-primary] hover:bg-[--color-primary] hover:text-white transition-colors'
+                : 'w-full rounded-lg bg-[--color-primary] px-4 py-2 font-semibold text-white hover:bg-[--color-primary-hover] transition-colors'
+            }
           >
             Book Now
           </button>

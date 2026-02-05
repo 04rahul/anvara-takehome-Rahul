@@ -7,6 +7,7 @@ import { logger } from '@/lib/utils';
 import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
 import type { RoleData } from '@/lib/auth-helpers';
+import { useDetailPageLayoutTest } from '@/hooks/use-ab-test';
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -38,6 +39,9 @@ export function AdSlotDetail({ id }: Props) {
   const [booking, setBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  
+  // A/B Test: Booking form layout variant
+  const layoutVariant = useDetailPageLayoutTest();
 
   useEffect(() => {
     // Only fetch ad slot - session data comes from context
@@ -207,43 +211,75 @@ export function AdSlotDetail({ id }: Props) {
           </div>
         </div>
 
+        {/* A/B Test: Traditional vs Modern Booking Layout */}
         {adSlot.isAvailable && !bookingSuccess && (
           <div className="mt-6 border-t border-[--color-border] pt-6">
             <h2 className="mb-4 text-lg font-semibold">Request This Placement</h2>
 
             {roleInfo?.role === 'sponsor' && roleInfo?.sponsorId ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-[--color-muted]">
-                    Your Company
-                  </label>
-                  <p className="text-[--color-foreground]">{roleInfo.name || user?.name}</p>
+              layoutVariant === 'modern' ? (
+                // Modern Variant: Compact horizontal layout
+                <div className="space-y-4">
+                  <div className="rounded-lg bg-blue-50 px-4 py-3 border border-blue-200">
+                    <p className="text-sm font-medium text-blue-900">
+                      Booking as: <span className="font-bold">{roleInfo.name || user?.name}</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Add a message (optional)..."
+                        className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-3 py-3 text-[--color-foreground] placeholder:text-[--color-muted] focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+                      />
+                    </div>
+                    <button
+                      onClick={handleBooking}
+                      disabled={booking}
+                      className="rounded-lg bg-[--color-primary] px-6 py-3 font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {booking ? 'Booking...' : 'Book Now'}
+                    </button>
+                  </div>
+                  {bookingError && <p className="text-sm text-red-600">{bookingError}</p>}
                 </div>
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="mb-1 block text-sm font-medium text-[--color-muted]"
+              ) : (
+                // Traditional Variant: Vertical layout (original)
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-[--color-muted]">
+                      Your Company
+                    </label>
+                    <p className="text-[--color-foreground]">{roleInfo.name || user?.name}</p>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="message"
+                      className="mb-1 block text-sm font-medium text-[--color-muted]"
+                    >
+                      Message to Publisher (optional)
+                    </label>
+                    <textarea
+                      id="message"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Tell the publisher about your campaign goals..."
+                      className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted] focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+                      rows={3}
+                    />
+                  </div>
+                  {bookingError && <p className="text-sm text-red-600">{bookingError}</p>}
+                  <button
+                    onClick={handleBooking}
+                    disabled={booking}
+                    className="w-full rounded-lg bg-[--color-primary] px-4 py-3 font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
                   >
-                    Message to Publisher (optional)
-                  </label>
-                  <textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Tell the publisher about your campaign goals..."
-                    className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted] focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
-                    rows={3}
-                  />
+                    {booking ? 'Booking...' : 'Book This Placement'}
+                  </button>
                 </div>
-                {bookingError && <p className="text-sm text-red-600">{bookingError}</p>}
-                <button
-                  onClick={handleBooking}
-                  disabled={booking}
-                  className="w-full rounded-lg bg-[--color-primary] px-4 py-3 font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-                >
-                  {booking ? 'Booking...' : 'Book This Placement'}
-                </button>
-              </div>
+              )
             ) : (
               <div>
                 <button
