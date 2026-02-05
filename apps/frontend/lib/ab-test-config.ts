@@ -29,6 +29,17 @@ export const AB_TESTS = {
     weights: [50, 50],
     description: 'Test traditional vs modern booking form layout',
   },
+
+  /**
+   * Test marketplace filter layout placement
+   * Variant A: Filters on top (compact, single-row on desktop)
+   * Variant B: Filters in a left sidebar (sticky)
+   */
+  'marketplace-filter-layout': {
+    variants: ['top', 'sidebar'],
+    weights: [50, 50],
+    description: 'Test top filter bar vs left sticky sidebar on marketplace',
+  },
 } as const satisfies Record<string, ABTestConfig & { description: string }>;
 
 // Export type-safe test IDs
@@ -37,3 +48,5 @@ export type ABTestId = keyof typeof AB_TESTS;
 // Export type-safe variant types
 export type MarketplaceCtaVariant = typeof AB_TESTS['marketplace-cta-style']['variants'][number];
 export type DetailPageLayoutVariant = typeof AB_TESTS['detail-page-layout']['variants'][number];
+export type MarketplaceFilterLayoutVariant =
+  typeof AB_TESTS['marketplace-filter-layout']['variants'][number];

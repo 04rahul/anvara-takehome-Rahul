@@ -23,13 +23,55 @@
   --color-muted: #64748b;
   --color-border: #e2e8f0;
 
+  /* Dialog (modal) styling */
+  /* In light mode the page background is white, so we give dialogs their own surface + stronger overlay */
+  --color-dialog-surface: #ffffff;
+  --color-dialog-overlay: rgba(15, 23, 42, 0.42);
+  --color-dialog-ring: rgba(15, 23, 42, 0.10);
+
+  /* Surfaces (derived) */
+  /* Subtle hover/pressed surfaces that work in both light & dark mode */
+  --color-surface-hover: color-mix(in oklab, var(--color-foreground) 4%, var(--color-background));
+  --color-surface-pressed: color-mix(in oklab, var(--color-foreground) 7%, var(--color-background));
+
+  /* Destructive subtle surfaces (for “Logout”, etc.) */
+  --color-danger-surface-hover: color-mix(in oklab, var(--color-error) 10%, var(--color-background));
+  --color-danger-border-hover: color-mix(in oklab, var(--color-error) 35%, var(--color-border));
+
   /* Status colors */
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
 
+  /* Status hover/pressed */
+  /* Darken on interaction (works in light + dark mode, keeps white text readable). */
+  --color-error-hover: color-mix(in oklab, var(--color-error) 86%, black);
+  --color-error-pressed: color-mix(in oklab, var(--color-error) 74%, black);
+
   /* Spacing */
   --spacing-container: 1rem;
+
+  /* Radius */
+  --radius-sm: 0.375rem; /* 6px */
+  --radius-md: 0.5rem; /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 16px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.16);
+
+  /* Motion */
+  --motion-fast: 140ms;
+  --motion-standard: 200ms;
+  --motion-slow: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Z-index layers */
+  --z-header: 20;
+  --z-dropdown: 30;
+  --z-dialog: 50;
+  --z-toast: 60;
 }
 
 /* Dark mode support - TODO: Implement dark mode toggle */
@@ -39,7 +81,39 @@
     --color-foreground: #f8fafc;
     --color-muted: #94a3b8;
     --color-border: #334155;
+
+    --color-dialog-surface: color-mix(in oklab, var(--color-background) 88%, white);
+    --color-dialog-overlay: rgba(0, 0, 0, 0.60);
+    --color-dialog-ring: rgba(248, 250, 252, 0.10);
   }
+}
+
+/*
+ * Explicit theme overrides (set by the Theme toggle via <html data-theme="...">)
+ * These must come AFTER prefers-color-scheme so they win.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  --color-dialog-surface: #ffffff;
+  --color-dialog-overlay: rgba(15, 23, 42, 0.42);
+  --color-dialog-ring: rgba(15, 23, 42, 0.10);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-border: #334155;
+
+  --color-dialog-surface: color-mix(in oklab, var(--color-background) 88%, white);
+  --color-dialog-overlay: rgba(0, 0, 0, 0.60);
+  --color-dialog-ring: rgba(248, 250, 252, 0.10);
 }
 
 /* Base styles */
@@ -94,5 +168,67 @@ body {
       #1e293b 40%,
       #1e293b 100%
     );
+  }
+}
+
+/*
+ * Animation utilities
+ * These classnames are used in the app already (e.g. `animate-in fade-in zoom-in-95`).
+ * We define them here to avoid relying on external animation plugins.
+ */
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ui-zoom-in-95 {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes ui-fade-zoom-in-95 {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation-duration: var(--tw-duration, var(--motion-standard));
+  animation-timing-function: var(--tw-ease, var(--ease-standard));
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: ui-fade-in;
+}
+
+.zoom-in-95 {
+  animation-name: ui-zoom-in-95;
+}
+
+/* When both are applied, use a combined keyframe to avoid one overriding the other */
+.fade-in.zoom-in-95 {
+  animation-name: ui-fade-zoom-in-95;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .fade-in,
+  .zoom-in-95,
+  .fade-in.zoom-in-95 {
+    animation: none !important;
   }
 }

@@ -4,11 +4,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from '@/lib/session-context';
 import { LogoutButton } from './logout-button';
+import { ButtonLink } from './ui/button-link';
+import { ThemeToggle } from './theme-toggle';
 
 export function Nav() {
   const sessionData = useSession();
   const { user, role } = sessionData;
   const pathname = usePathname();
+
+  const homeHref =
+    user && role === 'sponsor'
+      ? '/dashboard/sponsor'
+      : user && role === 'publisher'
+        ? '/dashboard/publisher'
+        : user
+          ? '/marketplace'
+          : '/';
 
   // Use startsWith for nested routes (e.g., /dashboard/sponsor/campaigns highlights "My Campaigns")
   const isActive = (path: string) => {
@@ -27,9 +38,9 @@ export function Nav() {
 
   return (
     <header className="border-b border-[--color-border]">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between p-4">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link
-          href="/"
+          href={homeHref}
           className={`text-xl font-bold ${
             isActive('/')
               ? 'text-[--color-primary]'
@@ -55,6 +66,8 @@ export function Nav() {
             </Link>
           )}
 
+          <ThemeToggle />
+
           {user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-[--color-muted]">
@@ -63,16 +76,14 @@ export function Nav() {
               <LogoutButton />
             </div>
           ) : (
-            <Link
+            <ButtonLink
               href="/login"
-              className={`rounded px-4 py-2 text-sm text-white transition-colors ${
-                isActive('/login')
-                  ? 'bg-[--color-primary-hover]'
-                  : 'bg-[--color-primary] hover:bg-[--color-primary-hover]'
-              }`}
+              variant="primary"
+              size="sm"
+              className={isActive('/login') ? 'bg-[--color-primary-hover]' : undefined}
             >
               Login
-            </Link>
+            </ButtonLink>
           )}
         </div>
       </nav>

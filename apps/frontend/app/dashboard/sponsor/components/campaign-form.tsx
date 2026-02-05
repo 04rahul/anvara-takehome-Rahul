@@ -1,8 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
-import { useEffect } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Button } from '@/app/components/ui/button';
+import { Select } from '@/app/components/ui/select';
 import {
   createCampaignAction,
   updateCampaignAction,
@@ -19,13 +20,9 @@ interface CampaignFormProps {
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="min-h-[44px] rounded-lg bg-[--color-primary] px-6 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-[--color-primary-hover] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] disabled:opacity-50"
-    >
-      {pending ? 'Saving...' : isEdit ? 'Update Campaign' : 'Create Campaign'}
-    </button>
+    <Button type="submit" isLoading={pending} className="min-w-[160px]">
+      {pending ? 'Saving…' : isEdit ? 'Update Campaign' : 'Create Campaign'}
+    </Button>
   );
 }
 
@@ -37,12 +34,92 @@ function formatDateForInput(dateString: string | undefined): string {
   return date.toISOString().split('T')[0];
 }
 
+type CampaignFormClientValues = {
+  id: string;
+  spent: string;
+  name: string;
+  description: string;
+  budget: string;
+  cpmRate: string;
+  cpcRate: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  targetCategories: string;
+  targetRegions: string;
+};
+
 export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProps) {
   const isEdit = !!campaign;
   const action = isEdit ? updateCampaignAction : createCampaignAction;
   const [state, formAction] = useActionState<CampaignFormState | null, FormData>(action, null);
   const isStartDateLocked =
     isEdit && campaign?.startDate ? new Date(campaign.startDate) <= new Date() : false;
+  const spentAmount = isEdit ? Number(campaign?.spent ?? 0) : 0;
+
+  const initialValues: CampaignFormClientValues = useMemo(() => {
+    const targetCategories = campaign?.targetCategories
+      ? Array.isArray(campaign.targetCategories)
+        ? campaign.targetCategories.join(', ')
+        : campaign.targetCategories
+      : '';
+
+    const targetRegions = campaign?.targetRegions
+      ? Array.isArray(campaign.targetRegions)
+        ? campaign.targetRegions.join(', ')
+        : campaign.targetRegions
+      : '';
+
+    return {
+      id: campaign?.id ?? '',
+      spent: String(campaign?.spent ?? 0),
+      name: campaign?.name ?? '',
+      description: campaign?.description ?? '',
+      budget: campaign?.budget?.toString() ?? '',
+      cpmRate: campaign?.cpmRate?.toString() ?? '',
+      cpcRate: campaign?.cpcRate?.toString() ?? '',
+      startDate: formatDateForInput(campaign?.startDate),
+      endDate: formatDateForInput(campaign?.endDate),
+      status: campaign?.status ?? 'DRAFT',
+      targetCategories,
+      targetRegions,
+    };
+  }, [
+    campaign?.id,
+    campaign?.spent,
+    campaign?.name,
+    campaign?.description,
+    campaign?.budget,
+    campaign?.cpmRate,
+    campaign?.cpcRate,
+    campaign?.startDate,
+    campaign?.endDate,
+    campaign?.status,
+    // These can be arrays, so depend on a stable string representation
+    Array.isArray(campaign?.targetCategories)
+      ? campaign?.targetCategories.join(',')
+      : campaign?.targetCategories,
+    Array.isArray(campaign?.targetRegions) ? campaign?.targetRegions.join(',') : campaign?.targetRegions,
+  ]);
+
+  const [values, setValues] = useState<CampaignFormClientValues>(initialValues);
+
+  // Reset values when switching between create/edit or different entities
+  useEffect(() => {
+    setValues(initialValues);
+  }, [initialValues]);
+
+  // Hydrate values returned from the server action on errors (prevents input reset)
+  useEffect(() => {
+    const serverValues = state?.values;
+    if (!serverValues) return;
+
+    setValues((prev) => ({
+      ...prev,
+      ...serverValues,
+      status: serverValues.status ?? prev.status,
+    }));
+  }, [state?.values]);
 
   // Close form on successful submission
   useEffect(() => {
@@ -53,48 +130,49 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
     }
   }, [state?.success, onSuccess]);
 
+  const inputClassName =
+    'w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
+
   return (
-    <div className="relative rounded-lg border border-[--color-border] bg-[--color-background] p-6 text-[--color-foreground] shadow-sm">
-      {onCancel && (
-        <button
-          type="button"
-          onClick={onCancel}
-          aria-label="Close modal"
-          className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[--color-border] text-[--color-foreground] transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
-        >
-          <span aria-hidden="true" className="text-lg leading-none">
-            ×
-          </span>
-        </button>
-      )}
-      <h2 className="mb-4 text-2xl font-semibold leading-tight">
-        {isEdit ? 'Edit Campaign' : 'Create New Campaign'}
-      </h2>
+    <div className="text-[--color-foreground]">
+      <div className="mb-6 space-y-1 pr-10">
+        <h2 className="text-xl font-bold leading-tight">
+          {isEdit ? 'Edit Campaign' : 'Create Campaign'}
+        </h2>
+        <p className="text-sm text-[--color-muted]">
+          Set your budget, schedule, and targeting. You can update details later.
+        </p>
+      </div>
 
       {state?.error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-[color-mix(in_oklab,var(--color-error)_35%,var(--color-border))] bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-background))] p-4 text-[--color-error]"
+        >
           {state.error}
         </div>
       )}
 
       <form action={formAction} className="flex max-h-[70vh] flex-col">
-        {isEdit && <input type="hidden" name="id" value={campaign.id} />}
+        {isEdit && <input type="hidden" name="id" value={values.id} />}
+        {isEdit && <input type="hidden" name="spent" value={values.spent} />}
 
         <div className="flex-1 space-y-5 overflow-y-auto pr-1">
           <div>
             <label htmlFor="name" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Name <span className="text-red-500">*</span>
+              Name <span className="text-[--color-error]">*</span>
             </label>
             <input
               type="text"
               id="name"
               name="name"
               required
-              defaultValue={campaign?.name || ''}
-              className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+              value={values.name}
+              onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
+              className={inputClassName}
             />
             {state?.fieldErrors?.name && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.name}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.name}</p>
             )}
           </div>
 
@@ -106,30 +184,37 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             id="description"
             name="description"
             rows={3}
-            defaultValue={campaign?.description || ''}
-            className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+            value={values.description}
+            onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
+            className={inputClassName}
           />
           {state?.fieldErrors?.description && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.description}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.description}</p>
           )}
         </div>
 
         <div>
           <label htmlFor="budget" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Budget ($) <span className="text-red-500">*</span>
+            Budget ($) <span className="text-[--color-error]">*</span>
           </label>
           <input
             type="number"
             id="budget"
             name="budget"
             required
-            min="1"
+            min={isEdit ? spentAmount : 1}
             step="0.01"
-            defaultValue={campaign?.budget?.toString() || ''}
-            className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+            value={values.budget}
+            onChange={(e) => setValues((v) => ({ ...v, budget: e.target.value }))}
+            className={inputClassName}
           />
+          {isEdit && spentAmount > 0 && (
+            <p className="mt-1 text-xs text-[--color-muted]">
+              Already spent: <span className="font-medium text-[--color-foreground]">${spentAmount.toLocaleString()}</span> (budget can’t be set lower)
+            </p>
+          )}
           {state?.fieldErrors?.budget && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.budget}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.budget}</p>
           )}
         </div>
 
@@ -144,11 +229,12 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               name="cpmRate"
               min="0"
               step="0.01"
-              defaultValue={campaign?.cpmRate?.toString() || ''}
-              className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+              value={values.cpmRate}
+              onChange={(e) => setValues((v) => ({ ...v, cpmRate: e.target.value }))}
+              className={inputClassName}
             />
             {state?.fieldErrors?.cpmRate && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.cpmRate}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.cpmRate}</p>
             )}
           </div>
 
@@ -162,11 +248,12 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               name="cpcRate"
               min="0"
               step="0.01"
-              defaultValue={campaign?.cpcRate?.toString() || ''}
-              className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+              value={values.cpcRate}
+              onChange={(e) => setValues((v) => ({ ...v, cpcRate: e.target.value }))}
+              className={inputClassName}
             />
             {state?.fieldErrors?.cpcRate && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.cpcRate}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.cpcRate}</p>
             )}
           </div>
         </div>
@@ -174,7 +261,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="startDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Start Date <span className="text-red-500">*</span>
+              Start Date <span className="text-[--color-error]">*</span>
             </label>
             <input
               type="date"
@@ -182,28 +269,30 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               name="startDate"
               required={!isEdit}
               disabled={isStartDateLocked}
-              defaultValue={formatDateForInput(campaign?.startDate)}
-              className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+              value={values.startDate}
+              onChange={(e) => setValues((v) => ({ ...v, startDate: e.target.value }))}
+              className={inputClassName}
             />
             {state?.fieldErrors?.startDate && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.startDate}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.startDate}</p>
             )}
           </div>
 
           <div>
             <label htmlFor="endDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              End Date <span className="text-red-500">*</span>
+              End Date <span className="text-[--color-error]">*</span>
             </label>
             <input
               type="date"
               id="endDate"
               name="endDate"
               required={!isEdit}
-              defaultValue={formatDateForInput(campaign?.endDate)}
-              className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+              value={values.endDate}
+              onChange={(e) => setValues((v) => ({ ...v, endDate: e.target.value }))}
+              className={inputClassName}
             />
             {state?.fieldErrors?.endDate && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.endDate}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.endDate}</p>
             )}
           </div>
         </div>
@@ -213,19 +302,19 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             <label htmlFor="status" className="mb-2 block text-sm font-medium text-[--color-foreground]">
               Status
             </label>
-            <select
+            <Select
               id="status"
               name="status"
-              defaultValue={campaign?.status || 'DRAFT'}
-              className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+              value={values.status}
+              onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))}
             >
               <option value="DRAFT">Draft</option>
               <option value="ACTIVE">Active</option>
               <option value="PAUSED">Paused</option>
               <option value="COMPLETED">Completed</option>
-            </select>
+            </Select>
             {state?.fieldErrors?.status && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.status}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.status}</p>
             )}
           </div>
         )}
@@ -238,18 +327,13 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             type="text"
             id="targetCategories"
             name="targetCategories"
-            defaultValue={
-              campaign?.targetCategories
-                ? Array.isArray(campaign.targetCategories)
-                  ? campaign.targetCategories.join(', ')
-                  : campaign.targetCategories
-                : ''
-            }
+            value={values.targetCategories}
+            onChange={(e) => setValues((v) => ({ ...v, targetCategories: e.target.value }))}
             placeholder="e.g., Technology, Business, Health"
-            className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+            className={inputClassName}
           />
           {state?.fieldErrors?.targetCategories && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.targetCategories}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.targetCategories}</p>
           )}
         </div>
 
@@ -261,34 +345,25 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             type="text"
             id="targetRegions"
             name="targetRegions"
-            defaultValue={
-              campaign?.targetRegions
-                ? Array.isArray(campaign.targetRegions)
-                  ? campaign.targetRegions.join(', ')
-                  : campaign.targetRegions
-                : ''
-            }
+            value={values.targetRegions}
+            onChange={(e) => setValues((v) => ({ ...v, targetRegions: e.target.value }))}
             placeholder="e.g., US, UK, CA"
-            className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent"
+            className={inputClassName}
           />
           {state?.fieldErrors?.targetRegions && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.targetRegions}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.targetRegions}</p>
           )}
         </div>
 
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <SubmitButton isEdit={isEdit} />
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="min-h-[44px] rounded-lg border border-[--color-border] bg-[--color-background] px-6 py-2.5 font-medium text-[--color-foreground] transition-colors duration-200 hover:bg-[--color-border] hover:text-[--color-foreground] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
-            >
+            <Button type="button" variant="secondary" onClick={onCancel}>
               Cancel
-            </button>
+            </Button>
           )}
+          <SubmitButton isEdit={isEdit} />
         </div>
       </form>
     </div>

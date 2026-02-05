@@ -6,6 +6,16 @@ import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useMarketplaceCtaTest } from '@/hooks/use-ab-test';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/app/components/ui/dialog';
+import { Button } from '@/app/components/ui/button';
+import { Textarea } from '@/app/components/ui/textarea';
+import { toast } from '@/app/components/ui/toast';
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -13,6 +23,8 @@ const typeColors: Record<string, string> = {
   NEWSLETTER: 'bg-purple-100 text-purple-700',
   PODCAST: 'bg-orange-100 text-orange-700',
 };
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291';
 
 function formatViews(views: number): string {
   if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
@@ -30,9 +42,14 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [message, setMessage] = useState('');
-  
+  const [isBooked, setIsBooked] = useState(!slot.isAvailable);
+
   // A/B Test: Button style variant
   const buttonVariant = useMarketplaceCtaTest();
+
+  const isSponsor = Boolean(session.roleData?.sponsorId) || session.role === 'sponsor';
+  const showBookButton = !session.user || isSponsor;
+  const canBook = showBookButton && slot.isAvailable && !isBooked;
 
   const handleBookNowClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -43,34 +60,66 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
   const handleCloseModal = () => {
     setShowModal(false);
     setMessage('');
-  };
-
-  const handleConfirmBooking = async () => {
-    setIsBooking(true);
-    // TODO: Implement actual booking logic here
-    // The message will be sent along with the booking: message
-    console.log('Booking with message:', message);
-    // For now, just close the modal after a brief delay
-    setTimeout(() => {
-      setIsBooking(false);
-      handleCloseModal();
-      // You can add success message or navigation here
-    }, 1000);
+    setIsBooking(false);
   };
 
   const handleLoginRedirect = () => {
     router.push('/login');
   };
 
-  // Show button if user is not logged in OR is logged in as a sponsor
-  const showBookButton = !session.user || session.role === 'sponsor';
+  const handleConfirmBooking = async () => {
+    if (!session.user) return;
+    if (!isSponsor || !session.roleData?.sponsorId) {
+      toast({
+        title: 'Sponsor account required',
+        description: 'Only sponsors can book ad slots.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      const res = await fetch(`${API_URL}/api/ad-slots/${slot.id}/book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          sponsorId: session.roleData.sponsorId,
+          message: message || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Failed to book placement' }));
+        throw new Error(data.error || 'Failed to book placement');
+      }
+
+      toast({
+        title: 'Booking requested',
+        description: 'Your request was submitted. The publisher will be in touch soon.',
+        variant: 'success',
+      });
+
+      setIsBooked(true);
+      handleCloseModal();
+      router.refresh(); // remove from list if marketplace only shows available
+    } catch (err) {
+      toast({
+        title: 'Booking failed',
+        description: err instanceof Error ? err.message : 'Failed to book placement',
+        variant: 'error',
+      });
+      setIsBooking(false);
+    }
+  };
 
   return (
     <>
-      <div className="relative rounded-lg border border-[--color-border] p-4 transition-shadow hover:shadow-md">
-        <Link href={`/marketplace/${slot.id}`} className="block">
+      <div className="relative flex h-full flex-col rounded-lg border border-[--color-border] bg-[--color-background] p-4 transition-all duration-200 will-change-transform hover:-translate-y-0.5 hover:border-[--color-primary] hover:shadow-lg focus-within:-translate-y-0.5 focus-within:border-[--color-primary] focus-within:shadow-lg focus-within:ring-2 focus-within:ring-[--color-primary] focus-within:ring-offset-2 focus-within:ring-offset-[--color-background]">
+        <Link href={`/marketplace/${slot.id}`} className="block flex-1">
           <div className="mb-2 flex items-start justify-between">
-            <h3 className="font-semibold">{slot.name}</h3>
+            <h3 className="min-h-[2.75rem] font-semibold line-clamp-2">{slot.name}</h3>
             <span
               className={`rounded px-2 py-0.5 text-xs ${typeColors[slot.type] || 'bg-gray-100'}`}
             >
@@ -100,12 +149,7 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
             <p className="mb-3 text-sm text-[--color-muted] line-clamp-2">{slot.description}</p>
           )}
 
-          <div className="flex items-center justify-between mb-3">
-            <span
-              className={`text-sm ${slot.isAvailable ? 'text-green-600' : 'text-[--color-muted]'}`}
-            >
-              {slot.isAvailable ? 'Available' : 'Booked'}
-            </span>
+          <div className="mb-3 flex items-center justify-center text-center">
             <span className="font-semibold text-[--color-primary]">
               ${Number(slot.basePrice).toLocaleString()}/mo
             </span>
@@ -113,113 +157,105 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
         </Link>
 
         {/* Book Now Button - outside Link to prevent navigation */}
-        {/* A/B Test: Solid vs Outline button style */}
-        {showBookButton && slot.isAvailable && (
-          <button
+        {/* Guest → login modal, Sponsor → booking modal */}
+        {canBook && (
+          <Button
             onClick={handleBookNowClick}
-            className={
-              buttonVariant === 'outline'
-                ? 'w-full rounded-lg border-2 border-[--color-primary] bg-transparent px-4 py-2 font-semibold text-[--color-primary] hover:bg-[--color-primary] hover:text-white transition-colors'
-                : 'w-full rounded-lg bg-[--color-primary] px-4 py-2 font-semibold text-white hover:bg-[--color-primary-hover] transition-colors'
-            }
+            variant={buttonVariant === 'outline' ? 'outline' : 'primary'}
+            size="lg"
+            className="mt-3 w-full"
           >
             Book Now
-          </button>
+          </Button>
         )}
+
+        {(isBooked || !slot.isAvailable) && showBookButton ? (
+          <Button variant="secondary" size="lg" className="mt-3 w-full" disabled>
+            Booked
+          </Button>
+        ) : null}
       </div>
+      <Dialog
+        open={showModal}
+        onOpenChange={(open) => {
+          setShowModal(open);
+          if (!open) {
+            setMessage('');
+            setIsBooking(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {!session.user ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Login Required</DialogTitle>
+                <DialogDescription>
+                  You need to be logged in to book ad slots. Please login or create an account to
+                  continue.
+                </DialogDescription>
+              </DialogHeader>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={handleCloseModal}>
-          <div className="relative w-full max-w-md rounded-lg border border-[--color-border] bg-[--color-background] p-6 text-[--color-foreground] shadow-lg" onClick={(e) => e.stopPropagation()}>
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={handleCloseModal}
-              aria-label="Close modal"
-              className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[--color-border] text-[--color-foreground] transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
-            >
-              <span aria-hidden="true" className="text-lg leading-none">
-                ×
-              </span>
-            </button>
+              <div className="flex gap-3">
+                <Button variant="secondary" className="flex-1" onClick={handleCloseModal}>
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={handleLoginRedirect}>
+                  Login
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Confirm Booking</DialogTitle>
+                <DialogDescription>
+                  You are about to request the following placement.
+                </DialogDescription>
+              </DialogHeader>
 
-            {!session.user ? (
-              // Not logged in - show login prompt
-              <>
-                <h2 className="text-xl font-bold mb-4 text-[--color-foreground] pr-8">Login Required</h2>
-                <p className="text-[--color-muted] mb-6">
-                  You need to be logged in to book ad slots. Please login or create an account to continue.
+              <div className="mb-4 rounded-lg border border-[--color-border] bg-[--color-background] p-4">
+                <h3 className="mb-1 font-semibold text-[--color-foreground]">{slot.name}</h3>
+                <p className="mb-2 text-sm text-[--color-muted]">by {slot.publisher?.name}</p>
+                <p className="font-semibold text-[--color-primary]">
+                  ${Number(slot.basePrice).toLocaleString()}/mo
                 </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCloseModal}
-                    className="flex-1 min-h-[44px] rounded-lg border border-[--color-border] bg-[--color-background] px-6 py-2.5 font-medium text-[--color-foreground] transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleLoginRedirect}
-                    className="flex-1 min-h-[44px] rounded-lg bg-[--color-primary] px-6 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-[--color-primary-hover] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
-                  >
-                    Login
-                  </button>
-                </div>
-              </>
-            ) : (
-              // Logged in as sponsor - show booking confirmation
-              <>
-                <h2 className="text-xl font-bold mb-4 text-[--color-foreground] pr-8">Confirm Booking</h2>
-                <div className="mb-4">
-                  <p className="text-[--color-muted] mb-3">
-                    You are about to book the following ad slot:
-                  </p>
-                  <div className="rounded-lg border border-[--color-border] bg-[--color-background] p-4">
-                    <h3 className="font-semibold mb-1 text-[--color-foreground]">{slot.name}</h3>
-                    <p className="text-sm text-[--color-muted] mb-2">
-                      by {slot.publisher?.name}
-                    </p>
-                    <p className="font-semibold text-[--color-primary]">
-                      ${Number(slot.basePrice).toLocaleString()}/mo
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <label htmlFor="message" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-                    Message to Publisher <span className="text-[--color-muted]">(optional)</span>
-                  </label>
-                  <textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    rows={3}
-                    placeholder="Add a message for the publisher..."
-                    className="w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:border-transparent resize-none"
-                  />
-                </div>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCloseModal}
-                    disabled={isBooking}
-                    className="flex-1 min-h-[44px] rounded-lg border border-[--color-border] bg-[--color-background] px-6 py-2.5 font-medium text-[--color-foreground] transition-colors duration-200 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleConfirmBooking}
-                    disabled={isBooking}
-                    className="flex-1 min-h-[44px] rounded-lg bg-[--color-primary] px-6 py-2.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-[--color-primary-hover] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] disabled:opacity-50"
-                  >
-                    {isBooking ? 'Booking...' : 'Confirm'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+              </div>
+
+              <div className="mb-6">
+                <label
+                  htmlFor={`message-${slot.id}`}
+                  className="mb-2 block text-sm font-medium text-[--color-foreground]"
+                >
+                  Message to Publisher <span className="text-[--color-muted]">(optional)</span>
+                </label>
+                <Textarea
+                  id={`message-${slot.id}`}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Add a message for the publisher..."
+                  className="resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={handleCloseModal}
+                  disabled={isBooking}
+                >
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={handleConfirmBooking} isLoading={isBooking}>
+                  {isBooking ? 'Booking...' : 'Confirm'}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

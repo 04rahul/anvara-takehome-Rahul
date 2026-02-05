@@ -8,6 +8,22 @@ export interface CampaignFormState {
   success?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
+  values?: CampaignFormValues;
+}
+
+export interface CampaignFormValues {
+  id?: string;
+  spent?: string;
+  name: string;
+  description: string;
+  budget: string;
+  cpmRate: string;
+  cpcRate: string;
+  startDate: string;
+  endDate: string;
+  status?: string;
+  targetCategories: string;
+  targetRegions: string;
 }
 
 export async function createCampaignAction(
@@ -15,6 +31,19 @@ export async function createCampaignAction(
   formData: FormData
 ): Promise<CampaignFormState> {
   try {
+    // Extract values early so we can return them on any failure (prevents input reset on errors)
+    const values: CampaignFormValues = {
+      name: (formData.get('name') as string) ?? '',
+      description: (formData.get('description') as string | null) ?? '',
+      budget: (formData.get('budget') as string) ?? '',
+      cpmRate: (formData.get('cpmRate') as string | null) ?? '',
+      cpcRate: (formData.get('cpcRate') as string | null) ?? '',
+      startDate: (formData.get('startDate') as string) ?? '',
+      endDate: (formData.get('endDate') as string) ?? '',
+      targetCategories: (formData.get('targetCategories') as string | null) ?? '',
+      targetRegions: (formData.get('targetRegions') as string | null) ?? '',
+    };
+
     // Get session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('better-auth.session_token');
@@ -23,19 +52,19 @@ export async function createCampaignAction(
       : undefined;
 
     if (!cookieHeader) {
-      return { error: 'Not authenticated' };
+      return { error: 'Not authenticated', values };
     }
 
     // Extract and validate form data
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string | null;
-    const budget = formData.get('budget') as string;
-    const cpmRate = formData.get('cpmRate') as string | null;
-    const cpcRate = formData.get('cpcRate') as string | null;
-    const startDate = formData.get('startDate') as string;
-    const endDate = formData.get('endDate') as string;
-    const targetCategories = formData.get('targetCategories') as string | null;
-    const targetRegions = formData.get('targetRegions') as string | null;
+    const name = values.name;
+    const description = values.description || null;
+    const budget = values.budget;
+    const cpmRate = values.cpmRate || null;
+    const cpcRate = values.cpcRate || null;
+    const startDate = values.startDate;
+    const endDate = values.endDate;
+    const targetCategories = values.targetCategories || null;
+    const targetRegions = values.targetRegions || null;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -87,7 +116,7 @@ export async function createCampaignAction(
     }
 
     if (Object.keys(fieldErrors).length > 0) {
-      return { fieldErrors };
+      return { fieldErrors, values };
     }
 
     // Prepare data for API
@@ -147,6 +176,17 @@ export async function createCampaignAction(
     console.error('Error creating campaign:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to create campaign',
+      values: {
+        name: (formData.get('name') as string) ?? '',
+        description: (formData.get('description') as string | null) ?? '',
+        budget: (formData.get('budget') as string) ?? '',
+        cpmRate: (formData.get('cpmRate') as string | null) ?? '',
+        cpcRate: (formData.get('cpcRate') as string | null) ?? '',
+        startDate: (formData.get('startDate') as string) ?? '',
+        endDate: (formData.get('endDate') as string) ?? '',
+        targetCategories: (formData.get('targetCategories') as string | null) ?? '',
+        targetRegions: (formData.get('targetRegions') as string | null) ?? '',
+      },
     };
   }
 }
@@ -156,6 +196,21 @@ export async function updateCampaignAction(
   formData: FormData
 ): Promise<CampaignFormState> {
   try {
+    const values: CampaignFormValues = {
+      id: (formData.get('id') as string) ?? '',
+      spent: (formData.get('spent') as string | null) ?? '',
+      name: (formData.get('name') as string) ?? '',
+      description: (formData.get('description') as string | null) ?? '',
+      budget: (formData.get('budget') as string) ?? '',
+      cpmRate: (formData.get('cpmRate') as string | null) ?? '',
+      cpcRate: (formData.get('cpcRate') as string | null) ?? '',
+      startDate: (formData.get('startDate') as string | null) ?? '',
+      endDate: (formData.get('endDate') as string | null) ?? '',
+      status: (formData.get('status') as string | null) ?? undefined,
+      targetCategories: (formData.get('targetCategories') as string | null) ?? '',
+      targetRegions: (formData.get('targetRegions') as string | null) ?? '',
+    };
+
     // Get session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('better-auth.session_token');
@@ -164,26 +219,27 @@ export async function updateCampaignAction(
       : undefined;
 
     if (!cookieHeader) {
-      return { error: 'Not authenticated' };
+      return { error: 'Not authenticated', values };
     }
 
     // Extract form data
-    const id = formData.get('id') as string;
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string | null;
-    const budget = formData.get('budget') as string;
-    const cpmRate = formData.get('cpmRate') as string | null;
-    const cpcRate = formData.get('cpcRate') as string | null;
-    const startDate = formData.get('startDate') as string | null;
-    const endDate = formData.get('endDate') as string | null;
-    const status = formData.get('status') as string | null;
-    const targetCategories = formData.get('targetCategories') as string | null;
-    const targetRegions = formData.get('targetRegions') as string | null;
+    const id = values.id ?? '';
+    const name = values.name;
+    const description = values.description === '' ? null : values.description;
+    const budget = values.budget;
+    const spent = values.spent === '' ? null : values.spent;
+    const cpmRate = values.cpmRate === '' ? null : values.cpmRate;
+    const cpcRate = values.cpcRate === '' ? null : values.cpcRate;
+    const startDate = values.startDate === '' ? null : values.startDate;
+    const endDate = values.endDate === '' ? null : values.endDate;
+    const status = values.status ?? null;
+    const targetCategories = values.targetCategories === '' ? null : values.targetCategories;
+    const targetRegions = values.targetRegions === '' ? null : values.targetRegions;
 
     const fieldErrors: Record<string, string> = {};
 
     if (!id) {
-      return { error: 'Campaign ID is required' };
+      return { error: 'Campaign ID is required', values };
     }
 
     if (!name || name.trim().length === 0) {
@@ -192,6 +248,14 @@ export async function updateCampaignAction(
 
     if (!budget || isNaN(Number(budget)) || Number(budget) < 1) {
       fieldErrors.budget = 'Budget must be a valid number >= 1';
+    }
+
+    // Edit-only validation: budget must not be lower than already spent
+    if (!fieldErrors.budget && spent !== null && spent !== '' && !isNaN(Number(spent))) {
+      const spentAmount = Number(spent);
+      if (Number(budget) < spentAmount) {
+        fieldErrors.budget = `Budget cannot be less than already spent ($${spentAmount.toLocaleString()})`;
+      }
     }
 
     if (startDate) {
@@ -230,7 +294,7 @@ export async function updateCampaignAction(
     }
 
     if (Object.keys(fieldErrors).length > 0) {
-      return { fieldErrors };
+      return { fieldErrors, values };
     }
 
     // Prepare data for API
@@ -304,6 +368,20 @@ export async function updateCampaignAction(
     console.error('Error updating campaign:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to update campaign',
+      values: {
+        id: (formData.get('id') as string) ?? '',
+        spent: (formData.get('spent') as string | null) ?? '',
+        name: (formData.get('name') as string) ?? '',
+        description: (formData.get('description') as string | null) ?? '',
+        budget: (formData.get('budget') as string) ?? '',
+        cpmRate: (formData.get('cpmRate') as string | null) ?? '',
+        cpcRate: (formData.get('cpcRate') as string | null) ?? '',
+        startDate: (formData.get('startDate') as string | null) ?? '',
+        endDate: (formData.get('endDate') as string | null) ?? '',
+        status: (formData.get('status') as string | null) ?? undefined,
+        targetCategories: (formData.get('targetCategories') as string | null) ?? '',
+        targetRegions: (formData.get('targetRegions') as string | null) ?? '',
+      },
     };
   }
 }

@@ -1,5 +1,6 @@
 import type { AdSlot } from '@/lib/types';
 import { AdSlotCard } from './ad-slot-card';
+import { Alert } from '@/app/components/ui/alert';
 
 interface AdSlotGridProps {
   adSlots: AdSlot[];
@@ -8,11 +9,7 @@ interface AdSlotGridProps {
 
 export function AdSlotGrid({ adSlots, error }: AdSlotGridProps) {
   if (error) {
-    return (
-      <div className="rounded border border-red-200 bg-red-50 p-4 text-red-600">
-        {error}
-      </div>
-    );
+    return <Alert variant="error">{error}</Alert>;
   }
 
   if (adSlots.length === 0) {
@@ -24,7 +21,7 @@ export function AdSlotGrid({ adSlots, error }: AdSlotGridProps) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
       {adSlots.map((slot) => (
         <AdSlotCard key={slot.id} slot={slot} />
       ))}

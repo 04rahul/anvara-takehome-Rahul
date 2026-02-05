@@ -6,7 +6,8 @@ import { requireAuth, roleMiddleware, type AuthRequest } from '../auth.js';
 
 const router: IRouter = Router();
 
-// GET /api/ad-slots - List available ad slots (public marketplace, or filtered by publisherId)
+// GET /api/ad-slots - List ad slots.
+// Public marketplace should only show available slots; publisher-scoped queries may include unavailable.
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { type, available, publisherId, minPrice, maxPrice, sortBy, search, category } = req.query;
@@ -15,13 +16,17 @@ router.get('/', async (req: Request, res: Response) => {
     const requestedPage = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
 
+    const resolvedPublisherId = publisherId ? getParam(publisherId) : '';
+    const isPublicMarketplaceQuery = !resolvedPublisherId;
+
     const whereClause: any = {
       ...(type && {
         type: type as string as AdSlotType,
       }),
-      ...(available === 'true' && { isAvailable: true }),
+      // Public marketplace always shows available slots only
+      ...(isPublicMarketplaceQuery ? { isAvailable: true } : (available === 'true' ? { isAvailable: true } : {})),
       // If publisherId query param is provided, filter by it
-      ...(publisherId && { publisherId: getParam(publisherId) }),
+      ...(resolvedPublisherId && { publisherId: resolvedPublisherId }),
     };
 
     // Category filter - filter by publisher category
@@ -314,6 +319,12 @@ router.put('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthR
     if (!existingAdSlot) {
       // Returns 404 for both "not found" and "not owned"
       res.status(404).json({ error: 'Ad slot not found' });
+      return;
+    }
+
+    // If the slot is already booked (unavailable), it cannot be edited
+    if (!existingAdSlot.isAvailable) {
+      res.status(409).json({ error: 'Ad slot is booked and cannot be edited' });
       return;
     }
 

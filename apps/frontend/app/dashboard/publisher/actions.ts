@@ -8,6 +8,20 @@ export interface AdSlotFormState {
   success?: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
+  values?: AdSlotFormValues;
+}
+
+export interface AdSlotFormValues {
+  id?: string;
+  currentIsAvailable?: string;
+  name: string;
+  description: string;
+  type: string;
+  width: string;
+  height: string;
+  position: string;
+  basePrice: string;
+  isAvailable?: boolean;
 }
 
 export async function createAdSlotAction(
@@ -15,6 +29,16 @@ export async function createAdSlotAction(
   formData: FormData
 ): Promise<AdSlotFormState> {
   try {
+    const values: AdSlotFormValues = {
+      name: (formData.get('name') as string) ?? '',
+      description: (formData.get('description') as string | null) ?? '',
+      type: (formData.get('type') as string) ?? 'DISPLAY',
+      width: (formData.get('width') as string | null) ?? '',
+      height: (formData.get('height') as string | null) ?? '',
+      position: (formData.get('position') as string | null) ?? '',
+      basePrice: (formData.get('basePrice') as string) ?? '',
+    };
+
     // Get session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('better-auth.session_token');
@@ -23,17 +47,17 @@ export async function createAdSlotAction(
       : undefined;
 
     if (!cookieHeader) {
-      return { error: 'Not authenticated' };
+      return { error: 'Not authenticated', values };
     }
 
     // Extract and validate form data
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string | null;
-    const type = formData.get('type') as string;
-    const width = formData.get('width') as string | null;
-    const height = formData.get('height') as string | null;
-    const position = formData.get('position') as string | null;
-    const basePrice = formData.get('basePrice') as string;
+    const name = values.name;
+    const description = values.description || null;
+    const type = values.type;
+    const width = values.width || null;
+    const height = values.height || null;
+    const position = values.position || null;
+    const basePrice = values.basePrice;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -58,7 +82,7 @@ export async function createAdSlotAction(
     }
 
     if (Object.keys(fieldErrors).length > 0) {
-      return { fieldErrors };
+      return { fieldErrors, values };
     }
 
     // Prepare data for API
@@ -95,6 +119,15 @@ export async function createAdSlotAction(
     console.error('Error creating ad slot:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to create ad slot',
+      values: {
+        name: (formData.get('name') as string) ?? '',
+        description: (formData.get('description') as string | null) ?? '',
+        type: (formData.get('type') as string) ?? 'DISPLAY',
+        width: (formData.get('width') as string | null) ?? '',
+        height: (formData.get('height') as string | null) ?? '',
+        position: (formData.get('position') as string | null) ?? '',
+        basePrice: (formData.get('basePrice') as string) ?? '',
+      },
     };
   }
 }
@@ -104,6 +137,19 @@ export async function updateAdSlotAction(
   formData: FormData
 ): Promise<AdSlotFormState> {
   try {
+    const values: AdSlotFormValues = {
+      id: (formData.get('id') as string) ?? '',
+      currentIsAvailable: (formData.get('currentIsAvailable') as string | null) ?? '',
+      name: (formData.get('name') as string) ?? '',
+      description: (formData.get('description') as string | null) ?? '',
+      type: (formData.get('type') as string) ?? 'DISPLAY',
+      width: (formData.get('width') as string | null) ?? '',
+      height: (formData.get('height') as string | null) ?? '',
+      position: (formData.get('position') as string | null) ?? '',
+      basePrice: (formData.get('basePrice') as string) ?? '',
+      isAvailable: ((formData.get('isAvailable') as string | null) ?? 'true') === 'true',
+    };
+
     // Get session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get('better-auth.session_token');
@@ -112,24 +158,29 @@ export async function updateAdSlotAction(
       : undefined;
 
     if (!cookieHeader) {
-      return { error: 'Not authenticated' };
+      return { error: 'Not authenticated', values };
     }
 
     // Extract form data
-    const id = formData.get('id') as string;
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string | null;
-    const type = formData.get('type') as string;
-    const width = formData.get('width') as string | null;
-    const height = formData.get('height') as string | null;
-    const position = formData.get('position') as string | null;
-    const basePrice = formData.get('basePrice') as string;
-    const isAvailable = formData.get('isAvailable') as string | null;
+    const id = values.id ?? '';
+    const currentIsAvailable = values.currentIsAvailable || null;
+    const name = values.name;
+    const description = values.description || null;
+    const type = values.type;
+    const width = values.width || null;
+    const height = values.height || null;
+    const position = values.position || null;
+    const basePrice = values.basePrice;
+    const isAvailable = values.isAvailable;
 
     const fieldErrors: Record<string, string> = {};
 
     if (!id) {
-      return { error: 'Ad slot ID is required' };
+      return { error: 'Ad slot ID is required', values };
+    }
+
+    if (currentIsAvailable === 'false') {
+      return { error: 'This placement is booked and cannot be edited.', values };
     }
 
     if (!name || name.trim().length === 0) {
@@ -153,7 +204,7 @@ export async function updateAdSlotAction(
     }
 
     if (Object.keys(fieldErrors).length > 0) {
-      return { fieldErrors };
+      return { fieldErrors, values };
     }
 
     // Prepare data for API
@@ -179,8 +230,8 @@ export async function updateAdSlotAction(
       data.position = position && position.trim().length > 0 ? position.trim() : null;
     }
 
-    if (isAvailable !== null) {
-      data.isAvailable = isAvailable === 'true';
+    if (typeof isAvailable === 'boolean') {
+      data.isAvailable = isAvailable;
     }
 
     // Call backend API
@@ -194,6 +245,18 @@ export async function updateAdSlotAction(
     console.error('Error updating ad slot:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to update ad slot',
+      values: {
+        id: (formData.get('id') as string) ?? '',
+        currentIsAvailable: (formData.get('currentIsAvailable') as string | null) ?? '',
+        name: (formData.get('name') as string) ?? '',
+        description: (formData.get('description') as string | null) ?? '',
+        type: (formData.get('type') as string) ?? 'DISPLAY',
+        width: (formData.get('width') as string | null) ?? '',
+        height: (formData.get('height') as string | null) ?? '',
+        position: (formData.get('position') as string | null) ?? '',
+        basePrice: (formData.get('basePrice') as string) ?? '',
+        isAvailable: ((formData.get('isAvailable') as string | null) ?? 'true') === 'true',
+      },
     };
   }
 }

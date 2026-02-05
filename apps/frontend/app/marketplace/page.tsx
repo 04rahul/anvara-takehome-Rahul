@@ -1,12 +1,9 @@
 import { getAdSlots, type PaginatedResponse } from '@/lib/api';
-import { FilterControls } from './components/filter-controls';
-import { ServerPagination } from './components/server-pagination';
-import { AdSlotGrid } from './components/ad-slot-grid';
+import { MarketplaceResults } from './components/marketplace-results';
 import type { AdSlot } from '@/lib/types';
 
 interface SearchParams {
   type?: string;
-  available?: string;
   sortBy?: string;
   minPrice?: string;
   maxPrice?: string;
@@ -27,16 +24,29 @@ export default async function MarketplacePage({ searchParams }: Props) {
   let response: PaginatedResponse<AdSlot> | null = null;
   let error: string | null = null;
 
+  const sanitizeFiniteNumberParam = (value?: string) => {
+    const trimmed = value?.trim();
+    if (!trimmed) return undefined;
+    const num = Number(trimmed);
+    if (!Number.isFinite(num)) return undefined;
+    return trimmed;
+  };
+
+  const sanitizedParams = {
+    ...params,
+    minPrice: sanitizeFiniteNumberParam(params.minPrice),
+    maxPrice: sanitizeFiniteNumberParam(params.maxPrice),
+  };
+
   try {
     // Fetch paginated data from server (backend handles page validation)
     response = await getAdSlots({
-      type: params.type,
-      available: params.available,
-      minPrice: params.minPrice,
-      maxPrice: params.maxPrice,
-      sortBy: params.sortBy,
-      search: params.search,
-      category: params.category,
+      type: sanitizedParams.type,
+      minPrice: sanitizedParams.minPrice,
+      maxPrice: sanitizedParams.maxPrice,
+      sortBy: sanitizedParams.sortBy,
+      search: sanitizedParams.search,
+      category: sanitizedParams.category,
       page: requestedPage,
       limit,
     });
@@ -57,21 +67,28 @@ export default async function MarketplacePage({ searchParams }: Props) {
         <p className="text-[--color-muted]">Browse available ad slots from our publishers</p>
       </div>
 
-      <FilterControls 
-        currentParams={params} 
-        totalResults={response?.pagination.total || 0} 
+      <MarketplaceResults
+        currentParams={{
+          type: sanitizedParams.type,
+          sortBy: sanitizedParams.sortBy,
+          minPrice: sanitizedParams.minPrice,
+          maxPrice: sanitizedParams.maxPrice,
+          search: sanitizedParams.search,
+          category: sanitizedParams.category,
+        }}
+        adSlots={filteredSlots}
+        error={error}
+        totalResults={response?.pagination.total || 0}
+        pagination={
+          !error && response
+            ? {
+                currentPage,
+                totalPages: response.pagination.totalPages,
+                resultsPerPage: limit,
+              }
+            : null
+        }
       />
-
-      <AdSlotGrid adSlots={filteredSlots} error={error} />
-
-      {!error && response && (
-        <ServerPagination
-          currentPage={currentPage}
-          totalPages={response.pagination.totalPages}
-          totalResults={response.pagination.total}
-          resultsPerPage={limit}
-        />
-      )}
     </div>
   );
 }

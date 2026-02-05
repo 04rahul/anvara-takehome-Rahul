@@ -21,9 +21,56 @@ export function ABTestDebugger() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    // #region agent log H1/H2
+    fetch('http://127.0.0.1:7242/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'pre-fix',
+        hypothesisId: 'H1',
+        location: 'app/components/ab-test-debugger.tsx:ABTestDebugger[mount]',
+        message: 'ABTestDebugger mounted',
+        data: {
+          nodeEnv: process.env.NODE_ENV,
+          pathname: typeof window !== 'undefined' ? window.location.pathname : 'server',
+          abTestsKeys: Object.keys(AB_TESTS),
+          hasMarketplaceFilterLayout: Object.prototype.hasOwnProperty.call(AB_TESTS, 'marketplace-filter-layout'),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion agent log H1/H2
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
-      setVariants(getAllVariants());
-      setEvents(getTrackedEvents().slice(-10)); // Last 10 events
+      const nextVariants = getAllVariants();
+      const nextEvents = getTrackedEvents().slice(-10); // Last 10 events
+
+      // #region agent log H2
+      fetch('http://127.0.0.1:7242/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'debug-session',
+          runId: 'pre-fix',
+          hypothesisId: 'H2',
+          location: 'app/components/ab-test-debugger.tsx:ABTestDebugger[open]',
+          message: 'ABTestDebugger opened - registry + cookie variants snapshot',
+          data: {
+            abTestsKeys: Object.keys(AB_TESTS),
+            cookieVariantKeys: Object.keys(nextVariants),
+            marketplaceFilterLayoutCookieVariant: nextVariants['marketplace-filter-layout'] ?? null,
+            recentEventCount: nextEvents.length,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion agent log H2
+
+      setVariants(nextVariants);
+      setEvents(nextEvents);
     }
   }, [isOpen, refreshKey]);
 

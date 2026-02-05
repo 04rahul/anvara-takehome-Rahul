@@ -223,6 +223,26 @@ router.put('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReq
         updateData.budget = validateDecimal(budget, 'budget', { required: true, min: 1, max: 10000 });
       }
 
+      // Business rule: budget cannot be reduced below already spent amount
+      if (updateData.budget !== undefined) {
+        const spentRaw: any = (existingCampaign as any).spent;
+        const spentAmount =
+          typeof spentRaw === 'number'
+            ? spentRaw
+            : typeof spentRaw?.toNumber === 'function'
+              ? spentRaw.toNumber()
+              : Number(spentRaw);
+
+        if (!Number.isFinite(spentAmount)) {
+          console.error('Invalid spent value on campaign', { id, spentRaw });
+          throw new ValidationError('Unable to validate budget against spent amount');
+        }
+
+        if (updateData.budget < spentAmount) {
+          throw new ValidationError(`budget cannot be less than already spent (${spentAmount})`);
+        }
+      }
+
       if (cpmRate !== undefined) {
         updateData.cpmRate = cpmRate === null
           ? null

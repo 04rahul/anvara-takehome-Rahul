@@ -34,6 +34,7 @@ vi.mock('./db.js', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
     placement: {
       findMany: vi.fn(),
@@ -487,22 +488,28 @@ describe('API Routes', () => {
   describe('GET /api/ad-slots', () => {
     it('should return array of ad slots', async () => {
       const mockAdSlots = [createMockAdSlot()];
+      vi.mocked(prisma.adSlot.count).mockResolvedValue(mockAdSlots.length);
       vi.mocked(prisma.adSlot.findMany).mockResolvedValue(mockAdSlots as any);
 
       const response = await request(app).get('/api/ad-slots');
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('pagination');
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     it('should filter by query parameters', async () => {
       const mockAdSlots = [createMockAdSlot()];
+      vi.mocked(prisma.adSlot.count).mockResolvedValue(mockAdSlots.length);
       vi.mocked(prisma.adSlot.findMany).mockResolvedValue(mockAdSlots as any);
 
       const response = await request(app).get('/api/ad-slots?type=DISPLAY&available=true');
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('pagination');
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
   });
 
@@ -588,6 +595,21 @@ describe('API Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id', 'adslot1');
+    });
+
+    it('should reject update when ad slot is already booked', async () => {
+      setMockPublisherAuth();
+      const existingAdSlot = { ...createMockAdSlot(), isAvailable: false };
+      vi.mocked(prisma.adSlot.findFirst).mockResolvedValue(existingAdSlot as any);
+
+      const response = await request(app)
+        .put('/api/ad-slots/adslot1')
+        .send({ name: 'Updated Ad Slot' });
+
+      expect(response.status).toBe(409);
+      expect(response.body).toHaveProperty('error');
+      expect(String(response.body.error).toLowerCase()).toContain('booked');
+      expect(prisma.adSlot.update).not.toHaveBeenCalled();
     });
   });
 

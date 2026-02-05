@@ -1,5 +1,6 @@
 import { AdSlotCard } from './ad-slot-card';
 import type { AdSlot } from '@/lib/types';
+import { Alert } from '@/app/components/ui/alert';
 
 interface AdSlotListProps {
   adSlots: AdSlot[];
@@ -8,11 +9,7 @@ interface AdSlotListProps {
 
 export function AdSlotList({ adSlots, error }: AdSlotListProps) {
   if (error) {
-    return (
-      <div className="rounded border border-red-200 bg-red-50 p-4 text-red-600">
-        {error}
-      </div>
-    );
+    return <Alert variant="error">{error}</Alert>;
   }
 
   if (adSlots.length === 0) {

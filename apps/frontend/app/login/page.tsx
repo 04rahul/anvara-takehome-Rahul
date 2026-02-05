@@ -1,14 +1,15 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/auth-client';
+import { Alert } from '@/app/components/ui/alert';
+import { Button } from '@/app/components/ui/button';
+import { Select } from '@/app/components/ui/select';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [role, setRole] = useState<'sponsor' | 'publisher'>('sponsor');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,9 +77,9 @@ export default function LoginPage() {
         <h1 className="mb-6 text-2xl font-bold">Login to Anvara</h1>
 
         {error && (
-          <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-600">
+          <Alert variant="error" className="mb-4">
             {error}
-          </div>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,23 +87,23 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-[--color-foreground]">
               Quick Login As
             </label>
-            <select
+            <Select
               value={role}
               onChange={(e) => setRole(e.target.value as 'sponsor' | 'publisher')}
-              className="mt-1 w-full rounded border border-[--color-border] bg-white px-3 py-2 text-gray-900"
+              className="mt-1"
             >
               <option value="sponsor">Sponsor (sponsor@example.com)</option>
               <option value="publisher">Publisher (publisher@example.com)</option>
-            </select>
+            </Select>
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-[--color-primary] px-4 py-2 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            isLoading={loading}
+            className="w-full"
           >
             {loading ? 'Logging in...' : `Login as ${role === 'sponsor' ? 'Sponsor' : 'Publisher'}`}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

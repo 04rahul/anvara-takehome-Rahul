@@ -1,8 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
-import { useEffect } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Button } from '@/app/components/ui/button';
+import { Select } from '@/app/components/ui/select';
 import {
   createAdSlotAction,
   updateAdSlotAction,
@@ -19,20 +20,71 @@ interface AdSlotFormProps {
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-[--color-primary] px-4 py-2 font-semibold text-white hover:opacity-90 disabled:opacity-50"
-    >
-      {pending ? 'Saving...' : isEdit ? 'Update Ad Slot' : 'Create Ad Slot'}
-    </button>
+    <Button type="submit" isLoading={pending} className="min-w-[160px]">
+      {pending ? 'Saving…' : isEdit ? 'Update Ad Slot' : 'Create Ad Slot'}
+    </Button>
   );
 }
+
+type AdSlotFormClientValues = {
+  id: string;
+  currentIsAvailable: string;
+  name: string;
+  description: string;
+  type: string;
+  width: string;
+  height: string;
+  position: string;
+  basePrice: string;
+  isAvailable: boolean;
+};
 
 export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
   const isEdit = !!adSlot;
   const action = isEdit ? updateAdSlotAction : createAdSlotAction;
   const [state, formAction] = useActionState<AdSlotFormState | null, FormData>(action, null);
+
+  const initialValues: AdSlotFormClientValues = useMemo(() => {
+    return {
+      id: adSlot?.id ?? '',
+      currentIsAvailable: String(adSlot?.isAvailable ?? true),
+      name: adSlot?.name ?? '',
+      description: adSlot?.description ?? '',
+      type: adSlot?.type ?? 'DISPLAY',
+      width: adSlot?.width?.toString() ?? '',
+      height: adSlot?.height?.toString() ?? '',
+      position: adSlot?.position ?? '',
+      basePrice: adSlot?.basePrice?.toString() ?? '',
+      isAvailable: adSlot?.isAvailable ?? true,
+    };
+  }, [
+    adSlot?.id,
+    adSlot?.isAvailable,
+    adSlot?.name,
+    adSlot?.description,
+    adSlot?.type,
+    adSlot?.width,
+    adSlot?.height,
+    adSlot?.position,
+    adSlot?.basePrice,
+  ]);
+
+  const [values, setValues] = useState<AdSlotFormClientValues>(initialValues);
+
+  useEffect(() => {
+    setValues(initialValues);
+  }, [initialValues]);
+
+  useEffect(() => {
+    const serverValues = state?.values;
+    if (!serverValues) return;
+
+    setValues((prev) => ({
+      ...prev,
+      ...serverValues,
+      isAvailable: serverValues.isAvailable ?? prev.isAvailable,
+    }));
+  }, [state?.values]);
 
   // Close form on successful submission
   useEffect(() => {
@@ -43,78 +95,96 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
     }
   }, [state?.success, onSuccess]);
 
+  const inputClassName =
+    'w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
+
   return (
-    <div className="rounded-lg border border-[--color-border] bg-[--color-background] p-6 text-[--color-foreground]">
-      <h2 className="mb-4 text-xl font-bold">
-        {isEdit ? 'Edit Ad Slot' : 'Create New Ad Slot'}
-      </h2>
+    <div className="text-[--color-foreground]">
+      <div className="mb-6 space-y-1 pr-10">
+        <h2 className="text-xl font-bold leading-tight">
+          {isEdit ? 'Edit Ad Slot' : 'Create Ad Slot'}
+        </h2>
+        <p className="text-sm text-[--color-muted]">
+          Define the placement details and pricing. You can edit this later.
+        </p>
+      </div>
 
       {state?.error && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-600">
+        <div
+          role="alert"
+          className="mb-4 rounded-lg border border-[color-mix(in_oklab,var(--color-error)_35%,var(--color-border))] bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-background))] p-4 text-[--color-error]"
+        >
           {state.error}
         </div>
       )}
 
-      <form action={formAction} className="space-y-4">
-        {isEdit && <input type="hidden" name="id" value={adSlot.id} />}
+      <form action={formAction} className="flex max-h-[70vh] flex-col">
+        {isEdit && <input type="hidden" name="id" value={values.id} />}
+        {isEdit && <input type="hidden" name="currentIsAvailable" value={values.currentIsAvailable} />}
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-[--color-foreground]">
-            Name <span className="text-red-500">*</span>
+        <div className="flex-1 space-y-5 overflow-y-auto pr-1">
+          <div>
+            <label htmlFor="name" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+            Name <span className="text-[--color-error]">*</span>
           </label>
           <input
             type="text"
             id="name"
             name="name"
             required
-            defaultValue={adSlot?.name || ''}
-            className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted]"
+            value={values.name}
+            onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
+              className={inputClassName}
           />
           {state?.fieldErrors?.name && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.name}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.name}</p>
           )}
-        </div>
+          </div>
 
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-[--color-foreground]">
+          <div>
+            <label
+              htmlFor="description"
+              className="mb-2 block text-sm font-medium text-[--color-foreground]"
+            >
             Description
           </label>
           <textarea
             id="description"
             name="description"
             rows={3}
-            defaultValue={adSlot?.description || ''}
-            className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted]"
+            value={values.description}
+            onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
+              className={inputClassName}
           />
           {state?.fieldErrors?.description && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.description}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.description}</p>
           )}
-        </div>
+          </div>
 
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-[--color-foreground]">
-            Type <span className="text-red-500">*</span>
+          <div>
+            <label htmlFor="type" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+            Type <span className="text-[--color-error]">*</span>
           </label>
-          <select
+          <Select
             id="type"
             name="type"
             required
-            defaultValue={adSlot?.type || 'DISPLAY'}
-            className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground]"
+            value={values.type}
+            onChange={(e) => setValues((v) => ({ ...v, type: e.target.value }))}
           >
             <option value="DISPLAY">Display</option>
             <option value="VIDEO">Video</option>
             <option value="NEWSLETTER">Newsletter</option>
             <option value="PODCAST">Podcast</option>
-          </select>
+          </Select>
           {state?.fieldErrors?.type && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.type}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.type}</p>
           )}
-        </div>
+          </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="width" className="block text-sm font-medium text-[--color-foreground]">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="width" className="mb-2 block text-sm font-medium text-[--color-foreground]">
               Width (px)
             </label>
             <input
@@ -122,16 +192,17 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
               id="width"
               name="width"
               min="1"
-              defaultValue={adSlot?.width?.toString() || ''}
-              className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted]"
+              value={values.width}
+              onChange={(e) => setValues((v) => ({ ...v, width: e.target.value }))}
+                className={inputClassName}
             />
             {state?.fieldErrors?.width && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.width}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.width}</p>
             )}
-          </div>
+            </div>
 
-          <div>
-            <label htmlFor="height" className="block text-sm font-medium text-[--color-foreground]">
+            <div>
+              <label htmlFor="height" className="mb-2 block text-sm font-medium text-[--color-foreground]">
               Height (px)
             </label>
             <input
@@ -139,34 +210,36 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
               id="height"
               name="height"
               min="1"
-              defaultValue={adSlot?.height?.toString() || ''}
-              className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted]"
+              value={values.height}
+              onChange={(e) => setValues((v) => ({ ...v, height: e.target.value }))}
+                className={inputClassName}
             />
             {state?.fieldErrors?.height && (
-              <p className="mt-1 text-sm text-red-600">{state.fieldErrors.height}</p>
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.height}</p>
             )}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="position" className="block text-sm font-medium text-[--color-foreground]">
+          <div>
+            <label htmlFor="position" className="mb-2 block text-sm font-medium text-[--color-foreground]">
             Position
           </label>
           <input
             type="text"
             id="position"
             name="position"
-            defaultValue={adSlot?.position || ''}
-            className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted]"
+            value={values.position}
+            onChange={(e) => setValues((v) => ({ ...v, position: e.target.value }))}
+              className={inputClassName}
           />
           {state?.fieldErrors?.position && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.position}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.position}</p>
           )}
-        </div>
+          </div>
 
-        <div>
-          <label htmlFor="basePrice" className="block text-sm font-medium text-[--color-foreground]">
-            Base Price ($/month) <span className="text-red-500">*</span>
+          <div>
+            <label htmlFor="basePrice" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+            Base Price ($/month) <span className="text-[--color-error]">*</span>
           </label>
           <input
             type="number"
@@ -175,40 +248,45 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
             required
             min="0"
             step="0.01"
-            defaultValue={adSlot?.basePrice?.toString() || ''}
-            className="mt-1 w-full rounded border border-[--color-border] bg-[--color-background] px-3 py-2 text-[--color-foreground] placeholder:text-[--color-muted]"
+            value={values.basePrice}
+            onChange={(e) => setValues((v) => ({ ...v, basePrice: e.target.value }))}
+              className={inputClassName}
           />
           {state?.fieldErrors?.basePrice && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.basePrice}</p>
+            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.basePrice}</p>
+          )}
+          </div>
+
+          {isEdit && (
+            <div>
+              <input
+                type="hidden"
+                name="isAvailable"
+                value={values.isAvailable ? 'true' : 'false'}
+              />
+              <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={values.isAvailable}
+                  onChange={(e) => setValues((v) => ({ ...v, isAvailable: e.target.checked }))}
+                  className="h-4 w-4 rounded border-[--color-border] accent-[--color-primary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
+                />
+                <span className="text-sm font-medium text-[--color-foreground]">Available</span>
+              </label>
+              <p className="mt-1 text-xs text-[--color-muted]">
+                Note: booked placements can’t be edited (availability is controlled by bookings).
+              </p>
+            </div>
           )}
         </div>
 
-        {isEdit && (
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isAvailable"
-                value="true"
-                defaultChecked={adSlot?.isAvailable ?? true}
-                className="rounded border-[--color-border]"
-              />
-              <span className="text-sm font-medium text-[--color-foreground]">Available</span>
-            </label>
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <SubmitButton isEdit={isEdit} />
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-lg border border-[--color-border] px-4 py-2 font-semibold text-[--color-foreground] hover:bg-[--color-muted]"
-            >
+            <Button type="button" variant="secondary" onClick={onCancel}>
               Cancel
-            </button>
+            </Button>
           )}
+          <SubmitButton isEdit={isEdit} />
         </div>
       </form>
     </div>

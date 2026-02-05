@@ -82,10 +82,10 @@ export function ServerPagination({
         {/* Previous button */}
         <Link
           href={currentPage > 1 ? buildPageUrl(currentPage - 1) : '#'}
-          className={`flex items-center gap-1 rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2 text-sm font-medium text-[--color-foreground] transition-colors ${
+          className={`flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition-colors ${
             currentPage === 1
               ? 'cursor-not-allowed opacity-50'
-              : 'hover:bg-gray-50'
+              : 'hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-pressed)]'
           }`}
           aria-label="Previous page"
           aria-disabled={currentPage === 1}
@@ -125,8 +125,8 @@ export function ServerPagination({
                 href={buildPageUrl(pageNum)}
                 className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-all ${
                   isCurrent
-                    ? 'border-[--color-primary] bg-[--color-primary] text-white cursor-default pointer-events-none shadow-md scale-110 font-bold'
-                    : 'border-[--color-border] bg-[--color-background] text-[--color-foreground] hover:bg-gray-50 hover:border-[--color-primary]/30'
+                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white cursor-default pointer-events-none shadow-md scale-110 font-bold'
+                    : 'border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-primary)] active:bg-[var(--color-surface-pressed)]'
                 }`}
                 aria-label={`Page ${pageNum}`}
                 aria-current={isCurrent ? 'page' : undefined}
@@ -140,10 +140,10 @@ export function ServerPagination({
         {/* Next button */}
         <Link
           href={currentPage < totalPages ? buildPageUrl(currentPage + 1) : '#'}
-          className={`flex items-center gap-1 rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2 text-sm font-medium text-[--color-foreground] transition-colors ${
+          className={`flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] transition-colors ${
             currentPage === totalPages
               ? 'cursor-not-allowed opacity-50'
-              : 'hover:bg-gray-50'
+              : 'hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-pressed)]'
           }`}
           aria-label="Next page"
           aria-disabled={currentPage === totalPages}

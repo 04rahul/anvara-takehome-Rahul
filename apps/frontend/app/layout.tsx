@@ -1,21 +1,70 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type React from 'react';
 import './globals.css';
 import { Nav } from './components/nav';
 import { getServerSession } from '@/lib/auth-helpers';
 import { SessionProvider } from '@/lib/session-context';
 import { ABTestDebugger } from './components/ab-test-debugger';
+import { UIProviders } from './components/ui/providers';
 
 // TODO: Add ErrorBoundary wrapper for graceful error handling
 // TODO: Consider adding a loading.tsx for Suspense boundaries
-// TODO: Add Open Graph metadata for social media sharing
-// TODO: Add Twitter Card metadata
-// TODO: Consider adding favicon and app icons
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
+  process.env.BETTER_AUTH_URL ||
+  'http://localhost:3847';
 
 export const metadata: Metadata = {
-  title: 'Anvara Marketplace',
+  metadataBase: new URL(siteUrl),
+  applicationName: 'Anvara',
+  title: {
+    default: 'Anvara Marketplace',
+    template: '%s — Anvara',
+  },
   description: 'Sponsorship marketplace connecting sponsors with publishers',
-  // Missing: openGraph, twitter, icons, viewport, etc.
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Anvara Marketplace',
+    description: 'Sponsorship marketplace connecting sponsors with publishers',
+    url: '/',
+    siteName: 'Anvara',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Anvara Marketplace',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Anvara Marketplace',
+    description: 'Sponsorship marketplace connecting sponsors with publishers',
+    images: ['/twitter-image'],
+  },
+  icons: {
+    icon: [{ url: '/icon' }],
+    apple: [{ url: '/apple-icon' }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#6366f1' },
+    { media: '(prefers-color-scheme: dark)', color: '#6366f1' },
+  ],
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -25,13 +74,30 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // HINT: If using React Query, you would wrap children with QueryClientProvider here
   // See: https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
+        {/* Prevent light/dark "flash" by applying theme before React hydrates */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+  try {
+    const key = 'anvara.theme';
+    const stored = localStorage.getItem(key);
+    const system = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const theme = stored === 'dark' || stored === 'light' ? stored : system;
+    document.documentElement.dataset.theme = theme;
+  } catch {}
+})();`,
+          }}
+        />
         <SessionProvider sessionData={sessionData}>
-          <Nav />
-          <main className="mx-auto max-w-6xl p-4">{children}</main>
-          {/* A/B Test Debugger - Development Only */}
-          {process.env.NODE_ENV === 'development' && <ABTestDebugger />}
+          <UIProviders>
+            <Nav />
+            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">{children}</main>
+            {/* A/B Test Debugger - Development Only */}
+            {process.env.NODE_ENV === 'development' && <ABTestDebugger />}
+          </UIProviders>
         </SessionProvider>
       </body>
     </html>
