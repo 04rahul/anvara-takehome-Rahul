@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type React from 'react';
 import './globals.css';
 import { Nav } from './components/nav';
-import { getServerSession } from '@/lib/auth-helpers';
+import { getServerSession } from '@/lib/auth-helpers.server';
 import { SessionProvider } from '@/lib/session-context';
 import { ABTestDebugger } from './components/ab-test-debugger';
 import { UIProviders } from './components/ui/providers';
@@ -71,8 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Fetch session once at layout level - will be cached for Nav and other components
   const sessionData = await getServerSession();
 
-  // HINT: If using React Query, you would wrap children with QueryClientProvider here
-  // See: https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
+  
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen antialiased">

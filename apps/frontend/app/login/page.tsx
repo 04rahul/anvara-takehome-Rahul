@@ -1,15 +1,15 @@
 'use client';
 
-import React from 'react';
-import { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { authClient } from '@/auth-client';
 import { Alert } from '@/app/components/ui/alert';
 import { Button } from '@/app/components/ui/button';
 import { Select } from '@/app/components/ui/select';
+import { getUserRole } from '@/lib/auth-helpers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291';
 
 export default function LoginPage() {
+  const roleSelectId = useId();
   const [role, setRole] = useState<'sponsor' | 'publisher'>('sponsor');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,10 +38,8 @@ export default function LoginPage() {
           try {
             const userId = ctx.data?.user?.id;
             if (userId) {
-              const roleRes = await fetch(`${API_URL}/api/auth/role/${userId}`, {
-                credentials: 'include',
-              });
-              const roleData = await roleRes.json();
+              const roleData = await getUserRole(userId);
+              
               // Use full page reload to ensure server components get fresh session data
               if (roleData.role === 'sponsor') {
                 window.location.href = '/dashboard/sponsor';
@@ -84,13 +82,18 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[--color-foreground]">
+            <label
+              htmlFor={roleSelectId}
+              className="mb-2 block text-sm font-medium text-[--color-foreground]"
+            >
               Quick Login As
             </label>
             <Select
+              id={roleSelectId}
+              name="role"
               value={role}
               onChange={(e) => setRole(e.target.value as 'sponsor' | 'publisher')}
-              className="mt-1"
+              disabled={loading}
             >
               <option value="sponsor">Sponsor (sponsor@example.com)</option>
               <option value="publisher">Publisher (publisher@example.com)</option>

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type React from 'react';
 import { ButtonLink } from '@/app/components/ui/button-link';
-import { getServerSession } from '@/lib/auth-helpers';
+import { getServerSession } from '@/lib/auth-helpers.server';
 
 export const metadata: Metadata = {
   title: 'Anvara — Sponsorship Marketplace',

@@ -116,6 +116,33 @@
   --color-dialog-ring: rgba(248, 250, 252, 0.10);
 }
 
+/*
+ * Native form controls (notably the opened <select> menu) are partially OS-rendered.
+ * In Chrome on Windows, `color-scheme: dark` typically makes the native dropdown readable,
+ * but the OS palette can be “pure black”. We align the dropdown surface with our app theme
+ * by nudging `select/option` colors to use the same tokens as Input/Textarea.
+ *
+ * Note: styling the *opened* menu is still browser/OS-dependent; this is best-effort.
+ */
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] option {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* If user follows system dark mode (prefers-color-scheme) without an explicit theme override. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+  }
+
+  :root:not([data-theme='light']) select,
+  :root:not([data-theme='light']) option {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
 /* Base styles */
 body {
   background-color: var(--color-background);

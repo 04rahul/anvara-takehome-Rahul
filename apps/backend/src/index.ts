@@ -6,10 +6,8 @@ import routes from './routes/index.js';
 const app: Application = express();
 const PORT = process.env.BACKEND_PORT || 4291;
 
-// Middleware
-// CORS: Allowlist for production (and still works in dev)
-// - Configure one origin via FRONTEND_URL, or multiple via FRONTEND_URLS (comma-separated)
-// - Example: FRONTEND_URLS="https://app.example.com,https://admin.example.com"
+
+
 const allowedOrigins = new Set(
   (process.env.FRONTEND_URL ??
     'http://localhost:3847')
