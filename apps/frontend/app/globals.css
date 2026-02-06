@@ -157,6 +157,27 @@ body {
 }
 
 /*
+ * Cursor affordance
+ * Ensure all interactive controls show the expected pointer cursor,
+ * while disabled controls communicate non-interactivity.
+ */
+button:not(:disabled),
+input[type='button']:not(:disabled),
+input[type='submit']:not(:disabled),
+input[type='reset']:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
+button:disabled,
+input[type='button']:disabled,
+input[type='submit']:disabled,
+input[type='reset']:disabled,
+[role='button'][aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/*
  * HINT: Use Tailwind v4 arbitrary values with CSS vars:
  * - bg-[--color-primary] for custom backgrounds
  * - text-[--color-foreground] for custom text colors

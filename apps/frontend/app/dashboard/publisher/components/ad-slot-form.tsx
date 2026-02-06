@@ -1,9 +1,10 @@
 'use client';
 
-import { useActionState, useEffect, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useRef, useState, type WheelEventHandler } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/app/components/ui/button';
 import { Select } from '@/app/components/ui/select';
+import { toast } from '@/app/components/ui/toast';
 import {
   createAdSlotAction,
   updateAdSlotAction,
@@ -43,6 +44,14 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
   const isEdit = !!adSlot;
   const action = isEdit ? updateAdSlotAction : createAdSlotAction;
   const [state, formAction] = useActionState<AdSlotFormState | null, FormData>(action, null);
+  const lastToastKeyRef = useRef<string | null>(null);
+  const blurOnWheel: WheelEventHandler<HTMLInputElement> = (e) => {
+    // Prevent scroll-wheel from changing number inputs (common surprise behavior in modals).
+    if (e.currentTarget === document.activeElement) {
+      e.preventDefault();
+      e.currentTarget.blur();
+    }
+  };
 
   const initialValues: AdSlotFormClientValues = useMemo(() => {
     return {
@@ -89,11 +98,34 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
   // Close form on successful submission
   useEffect(() => {
     if (state?.success) {
+      const successKey = isEdit ? 'update-success' : 'create-success';
+      if (lastToastKeyRef.current !== successKey) {
+        lastToastKeyRef.current = successKey;
+        toast(
+          isEdit
+            ? { title: 'Ad slot updated', description: 'Your changes were saved.', variant: 'success' }
+            : { title: 'Ad slot created', description: 'Your new ad slot is now available.', variant: 'success' }
+        );
+      }
       if (onSuccess) {
         onSuccess();
       }
     }
-  }, [state?.success, onSuccess]);
+  }, [state?.success, onSuccess, isEdit]);
+
+  useEffect(() => {
+    if (!state?.error) return;
+
+    const key = `${isEdit ? 'update' : 'create'}-error:${state.error}`;
+    if (lastToastKeyRef.current === key) return;
+    lastToastKeyRef.current = key;
+
+    toast({
+      title: isEdit ? 'Update failed' : 'Create failed',
+      description: state.error,
+      variant: 'error',
+    });
+  }, [state?.error, isEdit]);
 
   const inputClassName =
     'w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
@@ -118,7 +150,14 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
         </div>
       )}
 
-      <form action={formAction} className="flex max-h-[70vh] flex-col">
+      <form
+        action={formAction}
+        className="flex max-h-[70vh] flex-col"
+        onSubmit={() => {
+          // Allow toasts to fire again for subsequent submissions.
+          lastToastKeyRef.current = null;
+        }}
+      >
         {isEdit && <input type="hidden" name="id" value={values.id} />}
         {isEdit && <input type="hidden" name="currentIsAvailable" value={values.currentIsAvailable} />}
 
@@ -193,6 +232,7 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
               name="width"
               min="1"
               value={values.width}
+              onWheel={blurOnWheel}
               onChange={(e) => setValues((v) => ({ ...v, width: e.target.value }))}
                 className={inputClassName}
             />
@@ -211,6 +251,7 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
               name="height"
               min="1"
               value={values.height}
+              onWheel={blurOnWheel}
               onChange={(e) => setValues((v) => ({ ...v, height: e.target.value }))}
                 className={inputClassName}
             />
@@ -249,6 +290,7 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
             min="0"
             step="0.01"
             value={values.basePrice}
+            onWheel={blurOnWheel}
             onChange={(e) => setValues((v) => ({ ...v, basePrice: e.target.value }))}
               className={inputClassName}
           />

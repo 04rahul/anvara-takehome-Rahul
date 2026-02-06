@@ -10,6 +10,10 @@ import { getUserRole, type RoleData, type SessionData, type UserRole } from '@/l
  * Uses React.cache() to deduplicate requests across components in the same request.
  */
 export const getServerSession = cache(async (): Promise<SessionData> => {
+  const traceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const startMs = Date.now();
+  console.log(`[getServerSession:${traceId}] start`);
+
   // Get headers and cookies
   const headersList = await headers();
   const cookieStore = await cookies();
@@ -28,9 +32,9 @@ export const getServerSession = cache(async (): Promise<SessionData> => {
     requestHeaders.set('cookie', cookieString);
   }
 
-  const session = await auth.api.getSession({
-    headers: requestHeaders,
-  });
+  console.time(`[getServerSession:${traceId}] auth.api.getSession`);
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  console.timeEnd(`[getServerSession:${traceId}] auth.api.getSession`);
 
   const user = session?.user || null;
   let role: UserRole = null;
@@ -42,10 +46,17 @@ export const getServerSession = cache(async (): Promise<SessionData> => {
       ? `better-auth.session_token=${sessionCookie.value}`
       : undefined;
 
+    console.time(`[getServerSession:${traceId}] getUserRole`);
     roleData = await getUserRole(user.id, cookieHeader);
+    console.timeEnd(`[getServerSession:${traceId}] getUserRole`);
     role = roleData.role;
   }
 
+  console.log(`[getServerSession:${traceId}] done`, {
+    dtMs: Date.now() - startMs,
+    userId: user?.id ?? null,
+    role,
+  });
   return {
     user,
     role,

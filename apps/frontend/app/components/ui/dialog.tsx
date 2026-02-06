@@ -74,10 +74,10 @@ export const DialogContent = React.forwardRef<
               type="button"
               aria-label="Close dialog"
               className={cn(
-                'absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full',
+                'group absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full',
                 'border border-[--color-border] text-[--color-foreground]',
                 'transition-all duration-200',
-                'hover:bg-[--color-surface-hover] hover:border-[--color-primary-light] hover:shadow-[var(--shadow-sm)]',
+                'hover:bg-[--color-surface-hover] hover:border-[--color-primary-light] hover:text-[--color-primary] hover:shadow-[var(--shadow-sm)]',
                 'active:bg-[--color-surface-pressed] active:scale-[0.98]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]'
               )}

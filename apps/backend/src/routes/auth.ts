@@ -23,8 +23,12 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
 
 // GET /api/auth/role/:userId - Get user role based on Sponsor/Publisher records
 router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response) => {
-  
-  
+  const traceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const startMs = Date.now();
+  console.log(`[backend:role:${traceId}] start`, {
+    paramUserId: req.params.userId,
+    authedUserId: req.user?.id,
+  });
   try {
     if (!req.user) {
       console.error('❌ No user attached to request');
@@ -42,28 +46,44 @@ router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response)
     }
 
     // Check if user is a sponsor
+    console.time(`[backend:role:${traceId}] prisma.sponsor.findUnique`);
     const sponsor = await prisma.sponsor.findUnique({
       where: { userId },
       select: { id: true, name: true },
     });
+    console.timeEnd(`[backend:role:${traceId}] prisma.sponsor.findUnique`);
 
     if (sponsor) {
+      console.log(`[backend:role:${traceId}] done`, {
+        dtMs: Date.now() - startMs,
+        role: 'sponsor',
+      });
       res.json({ role: 'sponsor', sponsorId: sponsor.id, name: sponsor.name });
       return;
     }
 
     // Check if user is a publisher
+    console.time(`[backend:role:${traceId}] prisma.publisher.findUnique`);
     const publisher = await prisma.publisher.findUnique({
       where: { userId },
       select: { id: true, name: true },
     });
+    console.timeEnd(`[backend:role:${traceId}] prisma.publisher.findUnique`);
 
     if (publisher) {
+      console.log(`[backend:role:${traceId}] done`, {
+        dtMs: Date.now() - startMs,
+        role: 'publisher',
+      });
       res.json({ role: 'publisher', publisherId: publisher.id, name: publisher.name });
       return;
     }
 
     // User has no role assigned
+    console.log(`[backend:role:${traceId}] done`, {
+      dtMs: Date.now() - startMs,
+      role: null,
+    });
     res.json({ role: null });
   } catch (error) {
     console.error('Error fetching user role:', error);

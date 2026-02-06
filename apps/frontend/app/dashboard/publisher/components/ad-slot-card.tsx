@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { AdSlot } from '@/lib/types';
 import { AdSlotForm } from './ad-slot-form';
@@ -105,20 +105,6 @@ function TagIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function DollarIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M12 2v20M17 6.5c0-1.93-2.24-3.5-5-3.5S7 4.57 7 6.5 9.24 10 12 10s5 1.57 5 3.5S14.76 17 12 17s-5-1.57-5-3.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function CheckCircleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
@@ -168,6 +154,7 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteState, deleteAction] = useActionState(deleteAdSlotAction, null);
+  const lastDeleteToastKeyRef = useRef<string | null>(null);
 
   function DeleteButton() {
     const { pending } = useFormStatus();
@@ -189,6 +176,20 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
       });
     }
   }, [deleteState?.success]);
+
+  useEffect(() => {
+    if (!deleteState?.error) return;
+
+    const key = `delete-error:${deleteState.error}`;
+    if (lastDeleteToastKeyRef.current === key) return;
+    lastDeleteToastKeyRef.current = key;
+
+    toast({
+      title: 'Delete failed',
+      description: deleteState.error,
+      variant: 'error',
+    });
+  }, [deleteState?.error]);
 
   const actionButtonClassName =
     'inline-flex h-9 w-9 items-center justify-center rounded-full border border-[--color-border] bg-[--color-background] text-[--color-foreground] transition-all duration-200 hover:bg-[--color-surface-hover] hover:border-[--color-primary-light] hover:shadow-[var(--shadow-sm)] active:bg-[--color-surface-pressed] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]';
@@ -265,14 +266,13 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
             {availabilityLabel}
           </span>
           <span className="inline-flex items-center gap-1 font-semibold text-[--color-primary]">
-            <DollarIcon className="h-4 w-4" />
             ${Number(adSlot.basePrice).toLocaleString()}/mo
           </span>
         </div>
       </div>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto p-0">
           <DialogHeader className="sr-only">
             <DialogTitle>Edit Ad Slot</DialogTitle>
           </DialogHeader>
@@ -302,7 +302,14 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
             </Alert>
           )}
 
-          <form action={deleteAction} className="flex gap-3">
+          <form
+            action={deleteAction}
+            className="flex gap-3"
+            onSubmit={() => {
+              // Allow a toast to show again for a repeated attempt.
+              lastDeleteToastKeyRef.current = null;
+            }}
+          >
             <input type="hidden" name="id" value={adSlot.id} />
             <Button
               type="button"

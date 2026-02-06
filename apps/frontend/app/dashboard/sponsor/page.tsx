@@ -1,7 +1,6 @@
-import { headers, cookies } from 'next/headers';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
-import { getUserRole } from '@/lib/auth-helpers';
+import { getServerSession } from '@/lib/auth-helpers.server';
 import { CampaignList } from './components/campaign-list';
 import { CreateCampaignButton } from './components/create-campaign-button';
 import { getCampaigns } from '@/lib/api';
@@ -9,11 +8,8 @@ import type { Campaign } from '@/lib/types';
 
 
 export default async function SponsorDashboard() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session?.user) {
+  const session = await getServerSession();
+  if (!session.user) {
     redirect('/login');
   }
 
@@ -25,8 +21,8 @@ export default async function SponsorDashboard() {
     : undefined;
 
   // Verify user has 'sponsor' role
-  const roleData = await getUserRole(session.user.id, cookieHeader);
-  if (roleData.role !== 'sponsor') {
+  const roleData = session.roleData;
+  if (session.role !== 'sponsor') {
     redirect('/');
   }
 

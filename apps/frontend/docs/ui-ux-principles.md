@@ -15,6 +15,20 @@ The project uses **Tailwind CSS v4 (CSS-first)** and **CSS-variable design token
 
 ---
 
+## Loading states (server routes)
+
+Server-rendered pages often fetch data before HTML is returned. **Every server-rendered route segment must provide a `loading.tsx`** so the user never stares at a blank screen.
+
+Rules:
+- **Every server route segment that does server work** (fetch, session check, redirects) must include a `loading.tsx`.
+  - Examples in this repo: `/marketplace`, `/dashboard/*`, `/login`, and the root app segment.
+- **Prefer skeleton loaders** over spinners for page-level loading to avoid layout shift.
+- **Keep loaders lightweight** and theme-safe:
+  - use existing tokens and the shared `.skeleton` style
+  - avoid introducing one-off colors or heavy client-only logic in loaders
+
+---
+
 ## Global styling rules (non‑negotiable)
 
 - **No hardcoded hex colors in components**.
@@ -23,6 +37,9 @@ The project uses **Tailwind CSS v4 (CSS-first)** and **CSS-variable design token
   - Use shared primitives under `apps/frontend/app/components/ui/`.
 - **44px minimum touch target** for clickable controls.
   - Buttons, icon buttons, checkbox rows, pagination items.
+- **Cursor affordance is mandatory** for interactive controls.
+  - Enabled buttons / icon buttons must use the **pointer cursor**.
+  - Disabled controls must communicate non-interactivity (use **`cursor: not-allowed`** + disabled styling).
 - **Always show a focus indicator** (use `:focus-visible`).
   - Never remove outlines without replacing them.
 - **States must be defined** for interactive elements:

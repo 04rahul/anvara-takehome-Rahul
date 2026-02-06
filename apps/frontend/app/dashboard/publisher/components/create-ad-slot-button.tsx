@@ -29,7 +29,7 @@ export function CreateAdSlotButton() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto p-0">
           <DialogHeader className="sr-only">
             <DialogTitle>Create Ad Slot</DialogTitle>
           </DialogHeader>

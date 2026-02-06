@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState, type WheelEventHandler } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/app/components/ui/button';
 import { Select } from '@/app/components/ui/select';
@@ -56,6 +56,13 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
   const isStartDateLocked =
     isEdit && campaign?.startDate ? new Date(campaign.startDate) <= new Date() : false;
   const spentAmount = isEdit ? Number(campaign?.spent ?? 0) : 0;
+  const blurOnWheel: WheelEventHandler<HTMLInputElement> = (e) => {
+    // Prevent scroll-wheel from changing number inputs (common "2999.91" style bugs in modals).
+    if (e.currentTarget === document.activeElement) {
+      e.preventDefault();
+      e.currentTarget.blur();
+    }
+  };
 
   const initialValues: CampaignFormClientValues = useMemo(() => {
     const targetCategories = campaign?.targetCategories
@@ -147,7 +154,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
       {state?.error && (
         <div
           role="alert"
-          className="mb-4 rounded-lg border border-[color-mix(in_oklab,var(--color-error)_35%,var(--color-border))] bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-background))] p-4 text-[--color-error]"
+          className="mb-4 rounded-lg border border-[color-mix(in_oklab,var(--color-error)_35%,var(--color-border))] bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-background))] p-4 text-[var(--color-error)]"
         >
           {state.error}
         </div>
@@ -160,7 +167,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
         <div className="flex-1 space-y-5 overflow-y-auto pr-1">
           <div>
             <label htmlFor="name" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Name <span className="text-[--color-error]">*</span>
+              Name <span className="text-[var(--color-error)]">*</span>
             </label>
             <input
               type="text"
@@ -172,7 +179,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               className={inputClassName}
             />
             {state?.fieldErrors?.name && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.name}</p>
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.name}</p>
             )}
           </div>
 
@@ -189,13 +196,13 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             className={inputClassName}
           />
           {state?.fieldErrors?.description && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.description}</p>
+            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.description}</p>
           )}
         </div>
 
         <div>
           <label htmlFor="budget" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Budget ($) <span className="text-[--color-error]">*</span>
+            Budget ($) <span className="text-[var(--color-error)]">*</span>
           </label>
           <input
             type="number"
@@ -205,6 +212,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             min={isEdit ? spentAmount : 1}
             step="0.01"
             value={values.budget}
+            onWheel={blurOnWheel}
             onChange={(e) => setValues((v) => ({ ...v, budget: e.target.value }))}
             className={inputClassName}
           />
@@ -214,7 +222,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             </p>
           )}
           {state?.fieldErrors?.budget && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.budget}</p>
+            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.budget}</p>
           )}
         </div>
 
@@ -230,11 +238,12 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               min="0"
               step="0.01"
               value={values.cpmRate}
+              onWheel={blurOnWheel}
               onChange={(e) => setValues((v) => ({ ...v, cpmRate: e.target.value }))}
               className={inputClassName}
             />
             {state?.fieldErrors?.cpmRate && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.cpmRate}</p>
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.cpmRate}</p>
             )}
           </div>
 
@@ -249,11 +258,12 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               min="0"
               step="0.01"
               value={values.cpcRate}
+              onWheel={blurOnWheel}
               onChange={(e) => setValues((v) => ({ ...v, cpcRate: e.target.value }))}
               className={inputClassName}
             />
             {state?.fieldErrors?.cpcRate && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.cpcRate}</p>
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.cpcRate}</p>
             )}
           </div>
         </div>
@@ -261,7 +271,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="startDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Start Date <span className="text-[--color-error]">*</span>
+              Start Date <span className="text-[var(--color-error)]">*</span>
             </label>
             <input
               type="date"
@@ -274,13 +284,13 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               className={inputClassName}
             />
             {state?.fieldErrors?.startDate && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.startDate}</p>
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.startDate}</p>
             )}
           </div>
 
           <div>
             <label htmlFor="endDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              End Date <span className="text-[--color-error]">*</span>
+              End Date <span className="text-[var(--color-error)]">*</span>
             </label>
             <input
               type="date"
@@ -292,7 +302,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               className={inputClassName}
             />
             {state?.fieldErrors?.endDate && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.endDate}</p>
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.endDate}</p>
             )}
           </div>
         </div>
@@ -314,7 +324,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
               <option value="COMPLETED">Completed</option>
             </Select>
             {state?.fieldErrors?.status && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.status}</p>
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.status}</p>
             )}
           </div>
         )}
@@ -333,7 +343,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             className={inputClassName}
           />
           {state?.fieldErrors?.targetCategories && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.targetCategories}</p>
+            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.targetCategories}</p>
           )}
         </div>
 
@@ -351,7 +361,7 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
             className={inputClassName}
           />
           {state?.fieldErrors?.targetRegions && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.targetRegions}</p>
+            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.targetRegions}</p>
           )}
         </div>
 

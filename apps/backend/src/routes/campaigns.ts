@@ -274,6 +274,8 @@ router.put('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReq
 
       // Validate dates
       const now = new Date();
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
       const existingStartDate = new Date(existingCampaign.startDate);
 
       // If startDate is being updated and existing startDate is in the past, don't allow it
@@ -287,8 +289,8 @@ router.put('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReq
         if (isNaN(newStartDate.getTime())) {
           throw new ValidationError('startDate must be a valid date');
         }
-        if (newStartDate < now) {
-          throw new ValidationError('startDate must be in the future');
+        if (newStartDate < today) {
+          throw new ValidationError('startDate must be today or in the future');
         }
         updateData.startDate = newStartDate;
       }
@@ -299,8 +301,8 @@ router.put('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReq
         if (isNaN(newEndDate.getTime())) {
           throw new ValidationError('endDate must be a valid date');
         }
-        if (newEndDate < now) {
-          throw new ValidationError('endDate must be in the future');
+        if (newEndDate < today) {
+          throw new ValidationError('endDate must be today or in the future');
         }
         updateData.endDate = newEndDate;
       }

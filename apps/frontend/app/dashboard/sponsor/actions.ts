@@ -26,6 +26,12 @@ export interface CampaignFormValues {
   targetRegions: string;
 }
 
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export async function createCampaignAction(
   prevState: CampaignFormState | null,
   formData: FormData
@@ -67,6 +73,7 @@ export async function createCampaignAction(
     const targetRegions = values.targetRegions || null;
 
     const fieldErrors: Record<string, string> = {};
+    const today = startOfToday();
 
     if (!name || name.trim().length === 0) {
       fieldErrors.name = 'Name is required';
@@ -82,8 +89,8 @@ export async function createCampaignAction(
       const start = new Date(startDate);
       if (isNaN(start.getTime())) {
         fieldErrors.startDate = 'Start date must be a valid date';
-      } else if (start < new Date()) {
-        fieldErrors.startDate = 'Start date must be in the future';
+      } else if (start < today) {
+        fieldErrors.startDate = 'Start date must be today or in the future';
       }
     }
 
@@ -93,8 +100,8 @@ export async function createCampaignAction(
       const end = new Date(endDate);
       if (isNaN(end.getTime())) {
         fieldErrors.endDate = 'End date must be a valid date';
-      } else if (end < new Date()) {
-        fieldErrors.endDate = 'End date must be in the future';
+      } else if (end < today) {
+        fieldErrors.endDate = 'End date must be today or in the future';
       }
     }
 
@@ -237,6 +244,7 @@ export async function updateCampaignAction(
     const targetRegions = values.targetRegions === '' ? null : values.targetRegions;
 
     const fieldErrors: Record<string, string> = {};
+    const today = startOfToday();
 
     if (!id) {
       return { error: 'Campaign ID is required', values };
@@ -262,8 +270,8 @@ export async function updateCampaignAction(
       const start = new Date(startDate);
       if (isNaN(start.getTime())) {
         fieldErrors.startDate = 'Start date must be a valid date';
-      } else if (start < new Date()) {
-        fieldErrors.startDate = 'Start date must be in the future';
+      } else if (start < today) {
+        fieldErrors.startDate = 'Start date must be today or in the future';
       }
     }
 
@@ -271,8 +279,8 @@ export async function updateCampaignAction(
       const end = new Date(endDate);
       if (isNaN(end.getTime())) {
         fieldErrors.endDate = 'End date must be a valid date';
-      } else if (end < new Date()) {
-        fieldErrors.endDate = 'End date must be in the future';
+      } else if (end < today) {
+        fieldErrors.endDate = 'End date must be today or in the future';
       }
     }
 
