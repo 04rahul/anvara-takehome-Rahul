@@ -4,18 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
-import { useRouter } from 'next/navigation';
 import { useMarketplaceCtaTest } from '@/hooks/use-ab-test';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/app/components/ui/dialog';
 import { Button } from '@/app/components/ui/button';
-import { Textarea } from '@/app/components/ui/textarea';
-import { toast } from '@/app/components/ui/toast';
+import { BookingRequestModal } from '../[id]/components/booking-request-modal';
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -23,8 +14,6 @@ const typeColors: Record<string, string> = {
   NEWSLETTER: 'bg-purple-100 text-purple-700',
   PODCAST: 'bg-orange-100 text-orange-700',
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291';
 
 function formatViews(views: number): string {
   if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
@@ -38,80 +27,27 @@ interface AdSlotCardProps {
 
 export function AdSlotCard({ slot }: AdSlotCardProps) {
   const session = useSession();
-  const router = useRouter();
-  const [showModal, setShowModal] = useState(false);
-  const [isBooking, setIsBooking] = useState(false);
-  const [message, setMessage] = useState('');
-  const [isBooked, setIsBooked] = useState(!slot.isAvailable);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   // A/B Test: Button style variant
   const buttonVariant = useMarketplaceCtaTest();
 
   const isSponsor = Boolean(session.roleData?.sponsorId) || session.role === 'sponsor';
   const showBookButton = !session.user || isSponsor;
-  const canBook = showBookButton && slot.isAvailable && !isBooked;
+  const canBook = showBookButton && slot.isAvailable;
 
   const handleBookNowClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setMessage('');
-    setIsBooking(false);
-  };
-
-  const handleLoginRedirect = () => {
-    router.push('/login');
-  };
-
-  const handleConfirmBooking = async () => {
-    if (!session.user) return;
-    if (!isSponsor || !session.roleData?.sponsorId) {
-      toast({
-        title: 'Sponsor account required',
-        description: 'Only sponsors can book ad slots.',
-        variant: 'error',
-      });
+    if (!session.user) {
+      // Guest users - could redirect to login or show a message
+      // For now, just prevent action (they can click through to detail page)
       return;
     }
-
-    setIsBooking(true);
-    try {
-      const res = await fetch(`${API_URL}/api/ad-slots/${slot.id}/book`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          sponsorId: session.roleData.sponsorId,
-          message: message || undefined,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: 'Failed to book placement' }));
-        throw new Error(data.error || 'Failed to book placement');
-      }
-
-      toast({
-        title: 'Booking requested',
-        description: 'Your request was submitted. The publisher will be in touch soon.',
-        variant: 'success',
-      });
-
-      setIsBooked(true);
-      handleCloseModal();
-      router.refresh(); // remove from list if marketplace only shows available
-    } catch (err) {
-      toast({
-        title: 'Booking failed',
-        description: err instanceof Error ? err.message : 'Failed to book placement',
-        variant: 'error',
-      });
-      setIsBooking(false);
+    if (isSponsor && session.roleData?.sponsorId) {
+      setShowBookingModal(true);
     }
+    // Non-sponsor logged-in users - modal won't show (button should be disabled for them)
   };
 
   return (
@@ -169,93 +105,24 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
           </Button>
         )}
 
-        {(isBooked || !slot.isAvailable) && showBookButton ? (
+        {!slot.isAvailable && showBookButton ? (
           <Button variant="secondary" size="lg" className="mt-3 w-full" disabled>
             Booked
           </Button>
         ) : null}
       </div>
-      <Dialog
-        open={showModal}
-        onOpenChange={(open) => {
-          setShowModal(open);
-          if (!open) {
-            setMessage('');
-            setIsBooking(false);
-          }
-        }}
-      >
-        <DialogContent className="max-w-md">
-          {!session.user ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>Login Required</DialogTitle>
-                <DialogDescription>
-                  You need to be logged in to book ad slots. Please login or create an account to
-                  continue.
-                </DialogDescription>
-              </DialogHeader>
 
-              <div className="flex gap-3">
-                <Button variant="secondary" className="flex-1" onClick={handleCloseModal}>
-                  Cancel
-                </Button>
-                <Button className="flex-1" onClick={handleLoginRedirect}>
-                  Login
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle>Confirm Booking</DialogTitle>
-                <DialogDescription>
-                  You are about to request the following placement.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="mb-4 rounded-lg border border-[--color-border] bg-[--color-background] p-4">
-                <h3 className="mb-1 font-semibold text-[--color-foreground]">{slot.name}</h3>
-                <p className="mb-2 text-sm text-[--color-muted]">by {slot.publisher?.name}</p>
-                <p className="font-semibold text-[--color-primary]">
-                  ${Number(slot.basePrice).toLocaleString()}/mo
-                </p>
-              </div>
-
-              <div className="mb-6">
-                <label
-                  htmlFor={`message-${slot.id}`}
-                  className="mb-2 block text-sm font-medium text-[--color-foreground]"
-                >
-                  Message to Publisher <span className="text-[--color-muted]">(optional)</span>
-                </label>
-                <Textarea
-                  id={`message-${slot.id}`}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                  placeholder="Add a message for the publisher..."
-                  className="resize-none"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={handleCloseModal}
-                  disabled={isBooking}
-                >
-                  Cancel
-                </Button>
-                <Button className="flex-1" onClick={handleConfirmBooking} isLoading={isBooking}>
-                  {isBooking ? 'Booking...' : 'Confirm'}
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {isSponsor && session.roleData?.sponsorId && (
+        <BookingRequestModal
+          adSlot={slot}
+          open={showBookingModal}
+          onOpenChange={setShowBookingModal}
+          onSuccess={() => {
+            setShowBookingModal(false);
+          }}
+          sponsorId={session.roleData.sponsorId}
+        />
+      )}
     </>
   );
 }

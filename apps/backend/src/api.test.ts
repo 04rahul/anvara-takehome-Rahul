@@ -27,6 +27,12 @@ vi.mock('./db.js', () => ({
       delete: vi.fn(),
       count: vi.fn(),
     },
+    creative: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
     adSlot: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -39,9 +45,12 @@ vi.mock('./db.js', () => ({
     placement: {
       findMany: vi.fn(),
       create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
       count: vi.fn(),
       aggregate: vi.fn(),
     },
+    $transaction: vi.fn(),
     $queryRaw: vi.fn(),
   },
 }));
@@ -549,7 +558,7 @@ describe('API Routes', () => {
   });
 
   describe('POST /api/ad-slots/:id/book', () => {
-    it('should book ad slot (SPONSOR auth)', async () => {
+    it('should create placement request (SPONSOR auth) without locking inventory', async () => {
       setMockSponsorAuth();
       const mockAdSlot = {
         ...createMockAdSlot(),
@@ -557,15 +566,27 @@ describe('API Routes', () => {
         publisher: createMockPublisher(),
       };
       vi.mocked(prisma.adSlot.findUnique).mockResolvedValue(mockAdSlot as any);
-      const updatedSlot = { ...mockAdSlot, isAvailable: false };
-      vi.mocked(prisma.adSlot.update).mockResolvedValue(updatedSlot as any);
+      vi.mocked(prisma.campaign.findUnique).mockResolvedValue({ id: 'campaign1', sponsorId: 'sponsor1', name: 'Test Campaign' } as any);
+      vi.mocked(prisma.creative.findUnique).mockResolvedValue({ id: 'creative1', campaignId: 'campaign1', name: 'Test Creative', type: 'BANNER' } as any);
+      const newPlacement = createMockPlacement();
+      vi.mocked(prisma.placement.create).mockResolvedValue(newPlacement as any);
 
       const response = await request(app)
         .post('/api/ad-slots/adslot1/book')
-        .send({ sponsorId: 'sponsor1' });
+        .send({
+          campaignId: 'campaign1',
+          creativeId: 'creative1',
+          agreedPrice: 100,
+          pricingModel: 'CPM',
+          startDate: '2026-02-01',
+          endDate: '2026-03-01',
+          message: 'Hello',
+        });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('success', true);
+      expect(response.body).toHaveProperty('placement');
+      expect(prisma.adSlot.update).not.toHaveBeenCalled();
     });
   });
 
@@ -632,6 +653,7 @@ describe('API Routes', () => {
 
   describe('GET /api/placements', () => {
     it('should return array of placements', async () => {
+      setMockSponsorAuth();
       const mockPlacements = [createMockPlacement()];
       vi.mocked(prisma.placement.findMany).mockResolvedValue(mockPlacements as any);
 
@@ -642,6 +664,7 @@ describe('API Routes', () => {
     });
 
     it('should filter by query parameters', async () => {
+      setMockSponsorAuth();
       const mockPlacements = [createMockPlacement()];
       vi.mocked(prisma.placement.findMany).mockResolvedValue(mockPlacements as any);
 
@@ -654,8 +677,10 @@ describe('API Routes', () => {
 
   describe('POST /api/placements', () => {
     it('should create placement', async () => {
+      setMockSponsorAuth();
       const newPlacement = createMockPlacement();
       vi.mocked(prisma.placement.create).mockResolvedValue(newPlacement as any);
+      vi.mocked(prisma.adSlot.findUnique).mockResolvedValue({ id: 'adslot1', publisherId: 'publisher1', isAvailable: true } as any);
 
       const response = await request(app)
         .post('/api/placements')
@@ -663,7 +688,6 @@ describe('API Routes', () => {
           campaignId: 'campaign1',
           creativeId: 'creative1',
           adSlotId: 'adslot1',
-          publisherId: 'publisher1',
           agreedPrice: 100,
           startDate: '2025-01-01',
           endDate: '2025-12-31',
@@ -671,6 +695,55 @@ describe('API Routes', () => {
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
+    });
+  });
+
+  describe('PATCH /api/placements/:id', () => {
+    it('should approve placement request (PUBLISHER auth) and lock inventory', async () => {
+      setMockPublisherAuth();
+
+      (prisma.$transaction as any).mockImplementation(async (cb: any) => cb(prisma));
+
+      vi.mocked(prisma.placement.findUnique).mockResolvedValue({
+        ...createMockPlacement(),
+        id: 'placement1',
+        status: 'PENDING',
+        publisherId: 'publisher1',
+        adSlotId: 'adslot1',
+        adSlot: { id: 'adslot1', isAvailable: true },
+      } as any);
+
+      vi.mocked(prisma.adSlot.update).mockResolvedValue({ ...createMockAdSlot(), id: 'adslot1', isAvailable: false } as any);
+      vi.mocked(prisma.placement.update).mockResolvedValue({ ...createMockPlacement(), id: 'placement1', status: 'APPROVED' } as any);
+
+      const response = await request(app).patch('/api/placements/placement1').send({ status: 'APPROVED' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'APPROVED');
+      expect(prisma.adSlot.update).toHaveBeenCalled();
+    });
+
+    it('should reject placement request (PUBLISHER auth) without locking inventory', async () => {
+      setMockPublisherAuth();
+
+      (prisma.$transaction as any).mockImplementation(async (cb: any) => cb(prisma));
+
+      vi.mocked(prisma.placement.findUnique).mockResolvedValue({
+        ...createMockPlacement(),
+        id: 'placement1',
+        status: 'PENDING',
+        publisherId: 'publisher1',
+        adSlotId: 'adslot1',
+        adSlot: { id: 'adslot1', isAvailable: true },
+      } as any);
+
+      vi.mocked(prisma.placement.update).mockResolvedValue({ ...createMockPlacement(), id: 'placement1', status: 'REJECTED' } as any);
+
+      const response = await request(app).patch('/api/placements/placement1').send({ status: 'REJECTED' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('status', 'REJECTED');
+      expect(prisma.adSlot.update).not.toHaveBeenCalled();
     });
   });
 

@@ -10,7 +10,12 @@ if (!connectionString) {
 }
 
 export const auth = betterAuth({
-  database: new Pool({ connectionString }),
+  database: new Pool({
+    connectionString,
+    max: 20, // Maximum number of clients in the pool
+    idleTimeoutMillis: 30000, // How long a client can be idle before being removed
+    connectionTimeoutMillis: 2000, // Timeout for acquiring a connection
+  }),
   secret: process.env.BETTER_AUTH_SECRET || '',
   baseURL: process.env.BETTER_AUTH_URL || '',
   emailAndPassword: {
@@ -30,6 +35,7 @@ export interface AuthRequest extends Request {
     role: 'SPONSOR' | 'PUBLISHER' | null;
     sponsorId?: string;
     publisherId?: string;
+    name?: string; // Cache the sponsor/publisher name
   };
 }
 
@@ -39,72 +45,70 @@ export async function requireAuth(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  
-  
+  const traceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const startMs = Date.now();
+  console.log(`[requireAuth:${traceId}] start`);
+
   try {
     // Extract cookies from request
     const cookieHeader = req.headers.cookie || '';
-    
-    
-    
+
     // Create Headers object for Better Auth
-    // Better Auth expects headers similar to what Next.js headers() provides
     const requestHeaders = new Headers();
-    
+
     // Set cookie header (required for session validation)
     if (cookieHeader) {
       requestHeaders.set('cookie', cookieHeader);
     }
-    
+
     // Include host header (Better Auth might need this for validation)
     if (req.headers.host) {
       requestHeaders.set('host', req.headers.host);
     }
-    
+
     // Include origin if available (for CORS/security)
     if (req.headers.origin) {
       requestHeaders.set('origin', req.headers.origin);
     }
-    
+
     // Include user-agent if available
     if (req.headers['user-agent']) {
       requestHeaders.set('user-agent', req.headers['user-agent']);
     }
-    
+
     // Include authorization header if present
     if (req.headers.authorization) {
       requestHeaders.set('authorization', req.headers.authorization);
     }
 
-    
     // Validate session using Better Auth
-    
+    console.time(`[requireAuth:${traceId}] auth.api.getSession`);
     const session = await auth.api.getSession({
       headers: requestHeaders,
     });
-    
-   
+    console.timeEnd(`[requireAuth:${traceId}] auth.api.getSession`);
+
     if (!session || !session.user) {
-      
+      console.log(`[requireAuth:${traceId}] unauthorized`, { dtMs: Date.now() - startMs });
       res.status(401).json({ error: 'Not authenticated' });
       return;
     }
-    
-    
 
     const userId = session.user.id;
     const email = session.user.email || '';
 
-    // Look up user's role (Sponsor or Publisher)
+    // Look up user's role (Sponsor or Publisher) - do this ONCE here
+    console.time(`[requireAuth:${traceId}] role lookup`);
     const sponsor = await prisma.sponsor.findUnique({
       where: { userId },
-      select: { id: true },
+      select: { id: true, name: true },
     });
 
     const publisher = await prisma.publisher.findUnique({
       where: { userId },
-      select: { id: true },
+      select: { id: true, name: true },
     });
+    console.timeEnd(`[requireAuth:${traceId}] role lookup`);
 
     // Determine role
     let role: 'SPONSOR' | 'PUBLISHER' | null = null;
@@ -114,18 +118,23 @@ export async function requireAuth(
       role = 'PUBLISHER';
     }
 
-    // Attach user info to request
+    // Attach user info to request (including role data with name)
     req.user = {
       id: userId,
       email,
       role,
-      ...(sponsor && { sponsorId: sponsor.id }),
-      ...(publisher && { publisherId: publisher.id }),
+      ...(sponsor && { sponsorId: sponsor.id, name: sponsor.name }),
+      ...(publisher && { publisherId: publisher.id, name: publisher.name }),
     };
 
+    console.log(`[requireAuth:${traceId}] success`, {
+      dtMs: Date.now() - startMs,
+      userId,
+      role
+    });
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error(`[requireAuth:${traceId}] error:`, error);
     res.status(401).json({ error: 'Not authenticated' });
   }
 }

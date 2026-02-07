@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
-import { AdSlotType } from '../generated/prisma/client.js';
+import { AdSlotType, PricingModel } from '../generated/prisma/client.js';
 import { getParam, validateString, validateInteger, validateDecimal, ValidationError } from '../utils/helpers.js';
 import { requireAuth, roleMiddleware, type AuthRequest } from '../auth.js';
 
@@ -205,7 +205,7 @@ router.post('/', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthReq
 });
 
 // POST /api/ad-slots/:id/book - Book an ad slot (simplified booking flow)
-// This marks the slot as unavailable and creates a simple booking record
+// This creates a Placement request (status=PENDING). Inventory is locked only when publisher approves.
 router.post('/:id/book', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -214,16 +214,8 @@ router.post('/:id/book', requireAuth, roleMiddleware(['SPONSOR']), async (req: A
     }
 
     const id = getParam(req.params.id);
-    const { sponsorId, message } = req.body;
-
-    // Verify the sponsorId in request matches authenticated user's sponsorId
-    if (sponsorId && sponsorId !== req.user.sponsorId) {
-      res.status(403).json({ error: 'Forbidden: You can only book ad slots for your own sponsor account' });
-      return;
-    }
-
-    
-    const bookingSponsorId = req.user.sponsorId!;
+    const { campaignId, creativeId, agreedPrice, pricingModel, startDate, endDate, message } = req.body;
+    const sponsorId = req.user.sponsorId!;
 
     // Check if slot exists and is available
     const adSlot = await prisma.adSlot.findUnique({
@@ -241,27 +233,138 @@ router.post('/:id/book', requireAuth, roleMiddleware(['SPONSOR']), async (req: A
       return;
     }
 
-    // Mark slot as unavailable
-    const updatedSlot = await prisma.adSlot.update({
-      where: { id },
-      data: { isAvailable: false },
+    if (!campaignId || !creativeId || agreedPrice === undefined || agreedPrice === null || !startDate || !endDate) {
+      res.status(400).json({
+        error: 'campaignId, creativeId, agreedPrice, startDate, and endDate are required',
+      });
+      return;
+    }
+
+    // Validate campaign ownership (must belong to authenticated sponsor)
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: String(campaignId) },
+      select: { id: true, sponsorId: true, name: true, startDate: true, endDate: true },
+    });
+
+    if (!campaign) {
+      res.status(404).json({ error: 'Campaign not found' });
+      return;
+    }
+
+    if (campaign.sponsorId !== sponsorId) {
+      res.status(403).json({ error: 'Forbidden: You can only request placements for your own campaigns' });
+      return;
+    }
+
+    // Validate creative belongs to campaign
+    const creative = await prisma.creative.findUnique({
+      where: { id: String(creativeId) },
+      select: { id: true, campaignId: true, name: true, type: true },
+    });
+
+    if (!creative) {
+      res.status(404).json({ error: 'Creative not found' });
+      return;
+    }
+
+    if (creative.campaignId !== campaign.id) {
+      res.status(400).json({ error: 'Creative does not belong to the selected campaign' });
+      return;
+    }
+
+    // Validate dates
+    const start = new Date(String(startDate));
+    const end = new Date(String(endDate));
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      res.status(400).json({ error: 'startDate and endDate must be valid dates' });
+      return;
+    }
+    if (start >= end) {
+      res.status(400).json({ error: 'endDate must be after startDate' });
+      return;
+    }
+
+    // Validate dates are within campaign date range
+    const campaignStart = new Date(campaign.startDate);
+    const campaignEnd = new Date(campaign.endDate);
+    if (start < campaignStart) {
+      res.status(400).json({ error: `Start date must be on or after campaign start date: ${campaignStart.toISOString().split('T')[0]}` });
+      return;
+    }
+    if (end > campaignEnd) {
+      res.status(400).json({ error: `End date must be on or before campaign end date: ${campaignEnd.toISOString().split('T')[0]}` });
+      return;
+    }
+
+    // Validate pricing model
+    let resolvedPricingModel: PricingModel = PricingModel.CPM;
+    if (pricingModel !== undefined && pricingModel !== null && String(pricingModel).trim().length > 0) {
+      const candidate = String(pricingModel) as PricingModel;
+      if (!Object.values(PricingModel).includes(candidate)) {
+        res.status(400).json({ error: `Invalid pricingModel. Must be one of: ${Object.values(PricingModel).join(', ')}` });
+        return;
+      }
+      resolvedPricingModel = candidate;
+    }
+
+    // Validate agreedPrice
+    let resolvedAgreedPrice: number;
+    try {
+      resolvedAgreedPrice = validateDecimal(agreedPrice, 'agreedPrice', { required: true, min: 0, max: 999999.99 });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      throw error;
+    }
+
+    const placement = await prisma.placement.create({
+      data: {
+        campaignId: campaign.id,
+        creativeId: creative.id,
+        adSlotId: adSlot.id,
+        publisherId: adSlot.publisherId,
+        agreedPrice: resolvedAgreedPrice,
+        pricingModel: resolvedPricingModel,
+        startDate: start,
+        endDate: end,
+        // status defaults to PENDING (requested)
+      },
       include: {
+        campaign: { select: { id: true, name: true } },
+        creative: { select: { id: true, name: true, type: true } },
+        adSlot: { select: { id: true, name: true, type: true } },
         publisher: { select: { id: true, name: true } },
       },
     });
 
-    // In a real app, you'd create a Placement record here
-    // For now, we just mark it as booked
-    console.log(`Ad slot ${id} booked by sponsor ${bookingSponsorId}. Message: ${message || 'None'}`);
+    console.log(
+      `Placement requested: sponsor=${sponsorId} campaign=${campaign.id} adSlot=${adSlot.id} creative=${creative.id}. Message: ${message || 'None'}`
+    );
 
-    res.json({
+    res.status(201).json({
       success: true,
-      message: 'Ad slot booked successfully!',
-      adSlot: updatedSlot,
+      message: 'Placement request submitted',
+      placement,
     });
   } catch (error) {
     console.error('Error booking ad slot:', error);
-    res.status(500).json({ error: 'Failed to book ad slot' });
+    if (error instanceof ValidationError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    // For Prisma errors, extract meaningful message
+    if (error && typeof error === 'object' && 'message' in error) {
+      const prismaError = error as { message: string; code?: string };
+      if (prismaError.code === 'P2002') {
+        res.status(409).json({ error: 'A placement request already exists for this combination' });
+        return;
+      }
+      res.status(400).json({ error: prismaError.message });
+      return;
+    }
+    res.status(500).json({ error: 'Failed to create placement request' });
   }
 });
 // TODO:RD Not sure what to do in testing, maybe just allow for demo accounts - add auth accordingly

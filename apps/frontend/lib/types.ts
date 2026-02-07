@@ -10,13 +10,33 @@ export interface Campaign {
   spent: number;
   cpmRate?: number;
   cpcRate?: number;
-  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+  status: 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
   startDate: string;
   endDate: string;
   targetCategories?: string[];
   targetRegions?: string[];
   sponsorId: string;
-  sponsor?: { id: string; name: string };
+  sponsor?: { id: string; name: string; logo?: string };
+  creatives?: Creative[];
+  placements?: Placement[];
+  _count?: {
+    creatives: number;
+    placements: number;
+  };
+}
+
+export interface Creative {
+  id: string;
+  name: string;
+  type: 'BANNER' | 'VIDEO' | 'NATIVE' | 'SPONSORED_POST' | 'PODCAST_READ';
+  assetUrl: string;
+  clickUrl: string;
+  altText?: string;
+  width?: number;
+  height?: number;
+  isApproved: boolean;
+  isActive: boolean;
+  campaignId: string;
 }
 
 export interface AdSlot {
@@ -46,7 +66,29 @@ export interface Placement {
   id: string;
   impressions: number;
   clicks: number;
-  status: 'PENDING' | 'ACTIVE' | 'COMPLETED';
+  conversions?: number;
+  agreedPrice?: number;
+  pricingModel?: 'CPM' | 'CPC' | 'CPA' | 'FLAT_RATE';
+  startDate?: string;
+  endDate?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
   campaignId: string;
+  creativeId?: string;
   adSlotId: string;
+  publisherId?: string;
+  campaign?: { id: string; name: string };
+  creative?: { id: string; name: string; type: string };
+  adSlot?: { 
+    id: string; 
+    name: string; 
+    type: string;
+    description?: string;
+    basePrice?: number;
+  };
+  publisher?: { 
+    id: string; 
+    name: string;
+    category?: string;
+    website?: string;
+  };
 }

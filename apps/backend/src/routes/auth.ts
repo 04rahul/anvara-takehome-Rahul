@@ -22,13 +22,15 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/auth/role/:userId - Get user role based on Sponsor/Publisher records
+// FULLY OPTIMIZED: Uses role data cached by requireAuth middleware (ZERO DB queries!)
 router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response) => {
   const traceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const startMs = Date.now();
-  console.log(`[backend:role:${traceId}] start`, {
+  console.log(`[backend:role:${traceId}] start (from cache)`, {
     paramUserId: req.params.userId,
     authedUserId: req.user?.id,
   });
+
   try {
     if (!req.user) {
       console.error('❌ No user attached to request');
@@ -37,7 +39,6 @@ router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response)
     }
 
     const userId = getParam(req.params.userId);
-   
 
     // Security: Users can only query their own role
     if (userId !== req.user.id) {
@@ -45,46 +46,30 @@ router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response)
       return;
     }
 
-    // Check if user is a sponsor
-    console.time(`[backend:role:${traceId}] prisma.sponsor.findUnique`);
-    const sponsor = await prisma.sponsor.findUnique({
-      where: { userId },
-      select: { id: true, name: true },
-    });
-    console.timeEnd(`[backend:role:${traceId}] prisma.sponsor.findUnique`);
+    // ZERO DB QUERIES: All data is already cached in req.user from requireAuth!
+    let role: 'sponsor' | 'publisher' | null = null;
+    let roleData: Record<string, unknown> = { role: null };
 
-    if (sponsor) {
-      console.log(`[backend:role:${traceId}] done`, {
-        dtMs: Date.now() - startMs,
+    if (req.user.role === 'SPONSOR' && req.user.sponsorId) {
+      roleData = {
         role: 'sponsor',
-      });
-      res.json({ role: 'sponsor', sponsorId: sponsor.id, name: sponsor.name });
-      return;
-    }
-
-    // Check if user is a publisher
-    console.time(`[backend:role:${traceId}] prisma.publisher.findUnique`);
-    const publisher = await prisma.publisher.findUnique({
-      where: { userId },
-      select: { id: true, name: true },
-    });
-    console.timeEnd(`[backend:role:${traceId}] prisma.publisher.findUnique`);
-
-    if (publisher) {
-      console.log(`[backend:role:${traceId}] done`, {
-        dtMs: Date.now() - startMs,
+        sponsorId: req.user.sponsorId,
+        name: req.user.name,
+      };
+    } else if (req.user.role === 'PUBLISHER' && req.user.publisherId) {
+      roleData = {
         role: 'publisher',
-      });
-      res.json({ role: 'publisher', publisherId: publisher.id, name: publisher.name });
-      return;
+        publisherId: req.user.publisherId,
+        name: req.user.name,
+      };
     }
 
-    // User has no role assigned
-    console.log(`[backend:role:${traceId}] done`, {
+    console.log(`[backend:role:${traceId}] done (0 DB queries, from cache)`, {
       dtMs: Date.now() - startMs,
-      role: null,
+      role: roleData.role,
     });
-    res.json({ role: null });
+
+    res.json(roleData);
   } catch (error) {
     console.error('Error fetching user role:', error);
     res.status(500).json({ error: 'Failed to fetch user role' });

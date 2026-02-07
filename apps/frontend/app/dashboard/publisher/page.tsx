@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/auth-helpers.server';
-import { getAdSlots } from '@/lib/api';
+import { getAdSlots, getPlacements } from '@/lib/api';
 import { AdSlotList } from './components/ad-slot-list';
 import { CreateAdSlotButton } from './components/create-ad-slot-button';
-import type { AdSlot } from '@/lib/types';
+import { PlacementRequests } from './components/placement-requests';
+import type { AdSlot, Placement } from '@/lib/types';
 
 export default async function PublisherDashboard() {
   const session = await getServerSession();
@@ -27,6 +28,8 @@ export default async function PublisherDashboard() {
 
   let adSlots: AdSlot[] = [];
   let error: string | null = null;
+  let pendingPlacements: Placement[] = [];
+  let placementsError: string | null = null;
 
   try {
     if (roleData.publisherId) {
@@ -38,8 +41,22 @@ export default async function PublisherDashboard() {
     console.error('Failed to load ad slots:', err);
   }
 
+  try {
+    pendingPlacements = await getPlacements({ status: 'PENDING' }, cookieHeader);
+  } catch (err) {
+    placementsError = 'Failed to load placement requests. Please try again later.';
+    console.error('Failed to load placements:', err);
+  }
+
   return (
     <div className="space-y-6">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Placement requests</h1>
+        </div>
+        <PlacementRequests placements={pendingPlacements} error={placementsError} />
+      </section>
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">My Ad Slots</h1>
         <CreateAdSlotButton />

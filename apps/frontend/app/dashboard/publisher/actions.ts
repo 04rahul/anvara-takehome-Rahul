@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { createAdSlot, updateAdSlot, deleteAdSlot } from '@/lib/api';
+import { createAdSlot, updateAdSlot, deleteAdSlot, updatePlacementStatus } from '@/lib/api';
 
 export interface AdSlotFormState {
   success?: boolean;
@@ -297,4 +297,30 @@ export async function deleteAdSlotAction(
       error: error instanceof Error ? error.message : 'Failed to delete ad slot',
     };
   }
+}
+
+export async function approvePlacementAction(formData: FormData): Promise<void> {
+  const placementId = (formData.get('placementId') as string) ?? '';
+  if (!placementId) return;
+
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('better-auth.session_token');
+  const cookieHeader = sessionCookie ? `better-auth.session_token=${sessionCookie.value}` : undefined;
+  if (!cookieHeader) return;
+
+  await updatePlacementStatus(placementId, 'APPROVED', cookieHeader);
+  revalidatePath('/dashboard/publisher');
+}
+
+export async function rejectPlacementAction(formData: FormData): Promise<void> {
+  const placementId = (formData.get('placementId') as string) ?? '';
+  if (!placementId) return;
+
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('better-auth.session_token');
+  const cookieHeader = sessionCookie ? `better-auth.session_token=${sessionCookie.value}` : undefined;
+  if (!cookieHeader) return;
+
+  await updatePlacementStatus(placementId, 'REJECTED', cookieHeader);
+  revalidatePath('/dashboard/publisher');
 }

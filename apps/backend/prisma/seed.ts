@@ -451,7 +451,7 @@ async function main() {
   }
 
   // Create campaigns
-  await prisma.campaign.create({
+  const q1Launch = await prisma.campaign.create({
     data: {
       name: 'Q1 Product Launch',
       description: 'Launch campaign for our new product',
@@ -466,7 +466,7 @@ async function main() {
     },
   });
 
-  await prisma.campaign.create({
+  const brandAwareness = await prisma.campaign.create({
     data: {
       name: 'Brand Awareness',
       description: 'General brand awareness campaign',
@@ -481,8 +481,39 @@ async function main() {
     },
   });
 
+  // Create creatives (needed for placement request flow)
+  await prisma.creative.create({
+    data: {
+      name: 'Q1 Launch Leaderboard',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/970x250/png',
+      clickUrl: 'https://acme.com',
+      altText: 'Acme Q1 Launch',
+      width: 970,
+      height: 250,
+      isApproved: true,
+      isActive: true,
+      campaignId: q1Launch.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'Brand Awareness Sidebar',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/300x600/png',
+      clickUrl: 'https://techstartup.io',
+      altText: 'TechStartup brand ad',
+      width: 300,
+      height: 600,
+      isApproved: true,
+      isActive: true,
+      campaignId: brandAwareness.id,
+    },
+  });
+
   console.log('\nPrisma seed completed!');
-  console.log('  Created: 2 sponsors, 5 publishers, 20 ad slots, 2 campaigns');
+  console.log('  Created: 2 sponsors, 5 publishers, 20 ad slots, 2 campaigns, 2 creatives');
 
   console.log('\n✅ All seeding complete!');
 }

@@ -30,23 +30,39 @@ export async function api<T>(
     ...fetchOptions?.headers,
   };
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    headers,
-    credentials: 'include', // For client-side requests
-    ...fetchOptions,
-  });
-  
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: 'API request failed' }));
-    throw new Error(error.error || 'API request failed');
+  try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      headers,
+      credentials: 'include', // For client-side requests
+      ...fetchOptions,
+    });
+    
+    if (!res.ok) {
+      let errorMessage = 'API request failed';
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // If response is not JSON, use status text
+        errorMessage = res.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    return res.json();
+  } catch (error) {
+    // Improve error message for fetch failures
+    if (error instanceof TypeError && error.message === 'fetch failed') {
+      throw new Error(`Failed to connect to API server at ${API_URL}. Please ensure the backend server is running.`);
+    }
+    throw error;
   }
-  return res.json();
 }
 
 // Campaigns
 export const getCampaigns = (sponsorId?: string, cookieHeader?: string): Promise<Campaign[]> =>
   api<Campaign[]>(sponsorId ? `/api/campaigns?sponsorId=${sponsorId}` : '/api/campaigns', { cookieHeader });
-export const getCampaign = (id: string): Promise<Campaign> => api<Campaign>(`/api/campaigns/${id}`);
+export const getCampaign = (id: string, cookieHeader?: string): Promise<Campaign> => 
+  api<Campaign>(`/api/campaigns/${id}`, { cookieHeader });
 export const createCampaign = (data: unknown, cookieHeader?: string): Promise<Campaign> =>
   api<Campaign>('/api/campaigns', { method: 'POST', body: JSON.stringify(data), cookieHeader });
 export const updateCampaign = (id: string, data: unknown, cookieHeader?: string): Promise<Campaign> =>
@@ -134,9 +150,29 @@ export const deleteAdSlot = async (id: string, cookieHeader?: string): Promise<v
 };
 
 // Placements
-export const getPlacements = (): Promise<Placement[]> => api<Placement[]>('/api/placements');
+export const getPlacements = (
+  params?: { status?: string; campaignId?: string },
+  cookieHeader?: string
+): Promise<Placement[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.status) queryParams.set('status', params.status);
+  if (params?.campaignId) queryParams.set('campaignId', params.campaignId);
+  const query = queryParams.toString();
+  return api<Placement[]>(`/api/placements${query ? `?${query}` : ''}`, { cookieHeader });
+};
 export const createPlacement = (data: unknown): Promise<Placement> =>
   api<Placement>('/api/placements', { method: 'POST', body: JSON.stringify(data) });
+
+export const updatePlacementStatus = (
+  id: string,
+  status: 'APPROVED' | 'REJECTED',
+  cookieHeader?: string
+): Promise<Placement> =>
+  api<Placement>(`/api/placements/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+    cookieHeader,
+  });
 
 // Dashboard
 export const getStats = (): Promise<Stats> => api<Stats>('/api/dashboard/stats');

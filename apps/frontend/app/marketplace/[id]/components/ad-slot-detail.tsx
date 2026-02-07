@@ -3,17 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getAdSlot } from '@/lib/api';
-import { logger } from '@/lib/utils';
 import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
 import type { RoleData } from '@/lib/auth-helpers';
-import { useDetailPageLayoutTest } from '@/hooks/use-ab-test';
 import { Alert } from '@/app/components/ui/alert';
 import { Button } from '@/app/components/ui/button';
 import { ButtonLink } from '@/app/components/ui/button-link';
-import { Input } from '@/app/components/ui/input';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { Textarea } from '@/app/components/ui/textarea';
+import { BookingRequestModal } from './booking-request-modal';
 
 const typeColors: Record<string, string> = {
   DISPLAY: 'bg-blue-100 text-blue-700',
@@ -102,13 +99,9 @@ export function AdSlotDetail({ id }: Props) {
   const [adSlot, setAdSlot] = useState<AdSlot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
-  const [booking, setBooking] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  
-  // A/B Test: Booking form layout variant
-  const layoutVariant = useDetailPageLayoutTest();
+  const [showBookingModal, setShowBookingModal] = useState(false);
+
+  const isSponsor = roleInfo?.role === 'sponsor' && !!roleInfo?.sponsorId;
 
   useEffect(() => {
     // Only fetch ad slot - session data comes from context
@@ -117,64 +110,6 @@ export function AdSlotDetail({ id }: Props) {
       .catch(() => setError('Failed to load ad slot details'))
       .finally(() => setLoading(false));
   }, [id]);
-
-  const handleBooking = async () => {
-    if (!roleInfo?.sponsorId || !adSlot) return;
-
-    setBooking(true);
-    setBookingError(null);
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291'}/api/ad-slots/${adSlot.id}/book`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // Include cookies for authentication
-          body: JSON.stringify({
-            sponsorId: roleInfo.sponsorId,
-            message: message || undefined,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to book placement');
-      }
-
-      setBookingSuccess(true);
-      setAdSlot({ ...adSlot, isAvailable: false });
-    } catch (err) {
-      setBookingError(err instanceof Error ? err.message : 'Failed to book placement');
-    } finally {
-      setBooking(false);
-    }
-  };
-
-  const handleUnbook = async () => {
-    if (!adSlot) return;
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291'}/api/ad-slots/${adSlot.id}/unbook`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to reset booking');
-      }
-
-      setBookingSuccess(false);
-      setAdSlot({ ...adSlot, isAvailable: true });
-      setMessage('');
-    } catch (err) {
-      logger.error('Failed to unbook:', err);
-    }
-  };
 
   if (loading) {
     return <AdSlotDetailSkeleton />;
@@ -291,16 +226,7 @@ export function AdSlotDetail({ id }: Props) {
             </div>
 
             <div className="mt-6 border-t border-[--color-border] pt-6">
-              {bookingSuccess ? (
-                <div className="space-y-3">
-                  <Alert variant="success" title="Request sent">
-                    Your request has been submitted. The publisher will be in touch soon.
-                  </Alert>
-                  <Button onClick={handleUnbook} variant="secondary" className="w-full">
-                    Remove request (reset for testing)
-                  </Button>
-                </div>
-              ) : !adSlot.isAvailable ? (
+              {!adSlot.isAvailable ? (
                 <div className="space-y-3">
                   <Alert variant="info" title="This placement is booked">
                     Check back later, or browse other available slots.
@@ -309,9 +235,6 @@ export function AdSlotDetail({ id }: Props) {
                     <ButtonLink variant="secondary" className="flex-1" href="/marketplace">
                       Browse marketplace
                     </ButtonLink>
-                    <Button onClick={handleUnbook} variant="link" className="shrink-0">
-                      Reset listing
-                    </Button>
                   </div>
                 </div>
               ) : (
@@ -319,74 +242,14 @@ export function AdSlotDetail({ id }: Props) {
                   <div>
                     <h2 className="text-base font-semibold">Request this placement</h2>
                     <p className="mt-1 text-sm text-[--color-muted]">
-                      Send a request to the publisher. They’ll confirm next steps with you.
+                      Send a request to the publisher. This does not reserve the slot until it's approved.
                     </p>
                   </div>
 
-                  {roleInfo?.role === 'sponsor' && roleInfo?.sponsorId ? (
-                    layoutVariant === 'modern' ? (
-                      <div className="space-y-4">
-                        <div className="rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-3">
-                          <p className="text-sm text-[--color-muted]">
-                            Booking as{' '}
-                            <span className="font-semibold text-[--color-foreground]">
-                              {roleInfo.name || user?.name}
-                            </span>
-                          </p>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                          <div className="flex-1">
-                            <label htmlFor="bookingMessage" className="sr-only">
-                              Message (optional)
-                            </label>
-                            <Input
-                              id="bookingMessage"
-                              type="text"
-                              value={message}
-                              onChange={(e) => setMessage(e.target.value)}
-                              placeholder="Add a message (optional)"
-                            />
-                          </div>
-                          <Button onClick={handleBooking} isLoading={booking} className="sm:whitespace-nowrap">
-                            {booking ? 'Booking…' : 'Send request'}
-                          </Button>
-                        </div>
-
-                        {bookingError ? <Alert variant="error">{bookingError}</Alert> : null}
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="mb-1 block text-sm font-medium text-[--color-muted]">
-                            Your company
-                          </label>
-                          <p className="text-[--color-foreground]">{roleInfo.name || user?.name}</p>
-                        </div>
-
-                        <div>
-                          <label
-                            htmlFor="bookingMessage"
-                            className="mb-1 block text-sm font-medium text-[--color-muted]"
-                          >
-                            Message to publisher <span className="font-normal">(optional)</span>
-                          </label>
-                          <Textarea
-                            id="bookingMessage"
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Tell the publisher about your campaign goals…"
-                            rows={4}
-                          />
-                        </div>
-
-                        {bookingError ? <Alert variant="error">{bookingError}</Alert> : null}
-
-                        <Button onClick={handleBooking} isLoading={booking} className="w-full">
-                          {booking ? 'Booking…' : 'Send request'}
-                        </Button>
-                      </div>
-                    )
+                  {isSponsor && roleInfo?.sponsorId ? (
+                    <Button onClick={() => setShowBookingModal(true)} className="w-full">
+                      Request placement
+                    </Button>
                   ) : (
                     <div className="space-y-3">
                       {user ? (
@@ -463,6 +326,20 @@ export function AdSlotDetail({ id }: Props) {
           </section>
         </main>
       </div>
+
+      {isSponsor && roleInfo?.sponsorId && adSlot && (
+        <BookingRequestModal
+          adSlot={adSlot}
+          open={showBookingModal}
+          onOpenChange={setShowBookingModal}
+          onSuccess={() => {
+            // Refresh ad slot data after successful request to update availability status
+            getAdSlot(id).then(setAdSlot).catch(() => setError('Failed to refresh ad slot details'));
+            setShowBookingModal(false);
+          }}
+          sponsorId={roleInfo.sponsorId}
+        />
+      )}
     </div>
   );
 }

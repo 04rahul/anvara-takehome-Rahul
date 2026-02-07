@@ -52,6 +52,7 @@ router.get('/:id', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReq
         placements: {
           include: {
             adSlot: true,
+            creative: { select: { id: true, name: true, type: true } },
             publisher: { select: { id: true, name: true, category: true } },
           },
         },
