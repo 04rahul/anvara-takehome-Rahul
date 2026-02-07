@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> { }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function Select(
   { className, children, ...props },
@@ -18,8 +18,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(function 
           'text-[--color-foreground]',
           'transition-all duration-200',
           'hover:bg-[--color-surface-hover] active:bg-[--color-surface-pressed]',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] focus-visible:border-transparent',
-          'focus-visible:ring-offset-2 focus-visible:ring-offset-[--color-background]',
+          'focus:outline-none focus:border-[--color-primary] focus:ring-0',
+          'focus:-translate-y-0.5 focus:shadow-md focus:bg-[--color-surface-hover]',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           className
         )}

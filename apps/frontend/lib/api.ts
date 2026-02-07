@@ -36,7 +36,7 @@ export async function api<T>(
       credentials: 'include', // For client-side requests
       ...fetchOptions,
     });
-    
+
     if (!res.ok) {
       let errorMessage = 'API request failed';
       try {
@@ -61,7 +61,7 @@ export async function api<T>(
 // Campaigns
 export const getCampaigns = (sponsorId?: string, cookieHeader?: string): Promise<Campaign[]> =>
   api<Campaign[]>(sponsorId ? `/api/campaigns?sponsorId=${sponsorId}` : '/api/campaigns', { cookieHeader });
-export const getCampaign = (id: string, cookieHeader?: string): Promise<Campaign> => 
+export const getCampaign = (id: string, cookieHeader?: string): Promise<Campaign> =>
   api<Campaign>(`/api/campaigns/${id}`, { cookieHeader });
 export const createCampaign = (data: unknown, cookieHeader?: string): Promise<Campaign> =>
   api<Campaign>('/api/campaigns', { method: 'POST', body: JSON.stringify(data), cookieHeader });
@@ -120,10 +120,10 @@ export const getAdSlots = (params?: {
   if (params?.category) queryParams.set('category', params.category);
   if (params?.page) queryParams.set('page', String(params.page));
   if (params?.limit) queryParams.set('limit', String(params.limit));
-  
+
   const query = queryParams.toString();
   return api<PaginatedResponse<AdSlot>>(
-    `/api/ad-slots${query ? `?${query}` : ''}`, 
+    `/api/ad-slots${query ? `?${query}` : ''}`,
     { cookieHeader }
   );
 };
@@ -148,6 +148,8 @@ export const deleteAdSlot = async (id: string, cookieHeader?: string): Promise<v
   }
   // DELETE returns 204 No Content, so no body to parse
 };
+export const unbookAdSlot = (id: string, cookieHeader?: string): Promise<AdSlot> =>
+  api<AdSlot>(`/api/ad-slots/${id}/unbook`, { method: 'POST', cookieHeader });
 
 // Placements
 export const getPlacements = (

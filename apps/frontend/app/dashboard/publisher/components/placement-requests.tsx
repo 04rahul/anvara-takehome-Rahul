@@ -60,11 +60,37 @@ export function PlacementRequests({
                 <div>
                   <div className="text-[--color-muted]">Price</div>
                   <div className="text-[--color-foreground]">
-                    {p.agreedPrice !== undefined ? `$${Number(p.agreedPrice).toLocaleString()}` : '—'}{' '}
-                    {p.pricingModel ? <span className="text-[--color-muted]">({p.pricingModel})</span> : null}
+                    {p.agreedPrice !== undefined ? (
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-[--color-foreground]">
+                          Total: ${Number(p.agreedPrice).toLocaleString()}
+                        </span>
+                        {p.adSlot?.basePrice !== undefined && Number(p.agreedPrice) > Number(p.adSlot.basePrice) && (
+                          <span className="text-xs text-[--color-muted]">
+                            ${Number(p.adSlot.basePrice).toLocaleString()} (Base) +{' '}
+                            ${(Number(p.agreedPrice) - Number(p.adSlot.basePrice)).toLocaleString()} (
+                            {p.pricingModel})
+                          </span>
+                        )}
+                        {p.pricingModel && (!p.adSlot?.basePrice || Number(p.agreedPrice) <= Number(p.adSlot.basePrice)) && (
+                          <span className="text-xs text-[--color-muted]">({p.pricingModel})</span>
+                        )}
+                      </div>
+                    ) : (
+                      '—'
+                    )}
                   </div>
                 </div>
               </div>
+
+              {p.message && (
+                <div className="mt-4 border-t border-[--color-border] pt-3">
+                  <div className="text-xs font-medium text-[--color-muted] uppercase tracking-wider mb-1">
+                    Message from Sponsor
+                  </div>
+                  <div className="text-sm text-[--color-foreground] whitespace-pre-wrap">{p.message}</div>
+                </div>
+              )}
             </div>
 
             <div className="flex shrink-0 flex-col gap-2 sm:w-[220px]">

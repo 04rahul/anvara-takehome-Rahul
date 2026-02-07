@@ -11,7 +11,7 @@ const router: IRouter = Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { type, available, publisherId, minPrice, maxPrice, sortBy, search, category } = req.query;
-    
+
     // Pagination params
     const requestedPage = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
@@ -167,12 +167,16 @@ router.post('/', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthReq
           }
           return type as AdSlotType;
         })(),
-        width: width !== undefined
-          ? validateInteger(width, 'width', { required: false, min: 1, max: 10000, allowNull: true })
-          : undefined,
-        height: height !== undefined
-          ? validateInteger(height, 'height', { required: false, min: 1, max: 10000, allowNull: true })
-          : undefined,
+        width: type === AdSlotType.PODCAST
+          ? null
+          : (width !== undefined
+            ? validateInteger(width, 'width', { required: false, min: 1, max: 10000, allowNull: true })
+            : undefined),
+        height: type === AdSlotType.PODCAST
+          ? null
+          : (height !== undefined
+            ? validateInteger(height, 'height', { required: false, min: 1, max: 10000, allowNull: true })
+            : undefined),
         position: position !== undefined && position !== null
           ? validateString(position, 'position', { required: false, maxLength: 100, allowEmpty: true })
           : null,
@@ -329,6 +333,7 @@ router.post('/:id/book', requireAuth, roleMiddleware(['SPONSOR']), async (req: A
         pricingModel: resolvedPricingModel,
         startDate: start,
         endDate: end,
+        message,
         // status defaults to PENDING (requested)
       },
       include: {
@@ -369,19 +374,40 @@ router.post('/:id/book', requireAuth, roleMiddleware(['SPONSOR']), async (req: A
 });
 // TODO:RD Not sure what to do in testing, maybe just allow for demo accounts - add auth accordingly
 // POST /api/ad-slots/:id/unbook - Reset ad slot to available (for testing)
-router.post('/:id/unbook', async (req: Request, res: Response) => {
+router.post('/:id/unbook', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const id = getParam(req.params.id);
     if (!id) {
       return res.status(400).json({ error: "Missing id" });
     }
 
-    const updatedSlot = await prisma.adSlot.update({
-      where: { id },
-      data: { isAvailable: true },
-      include: {
-        publisher: { select: { id: true, name: true } },
-      },
+    // Check if user is a demo user
+    const demoEmails = ['sponsor@example.com', 'publisher@example.com'];
+    if (!req.user || !req.user.email || !demoEmails.includes(req.user.email)) {
+      res.status(403).json({ error: 'Forbidden: This action is only available for demo users' });
+      return;
+    }
+
+    // Use a transaction to ensure both operations succeed or fail together
+    const updatedSlot = await prisma.$transaction(async (tx) => {
+      // 1. Delete associated active/approved placements
+      await tx.placement.deleteMany({
+        where: {
+          adSlotId: id,
+          status: {
+            in: ['APPROVED', 'ACTIVE'],
+          },
+        },
+      });
+
+      // 2. Set slot to available
+      return await tx.adSlot.update({
+        where: { id },
+        data: { isAvailable: true },
+        include: {
+          publisher: { select: { id: true, name: true } },
+        },
+      });
     });
 
     res.json({
@@ -409,7 +435,7 @@ router.put('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthR
       return;
     }
 
-    const { name, description, type, width, height, position, basePrice, isAvailable } = req.body;
+    const { name, description, type, width, height, position, basePrice } = req.body;
 
     // Verify ownership - check ad slot exists and user owns it
     const existingAdSlot = await prisma.adSlot.findFirst({
@@ -454,12 +480,19 @@ router.put('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthR
         updateData.type = type as AdSlotType;
       }
 
-      if (width !== undefined) {
-        updateData.width = validateInteger(width, 'width', { required: false, min: 1, max: 10000, allowNull: true });
-      }
+      const resolvedType = type !== undefined ? (type as AdSlotType) : existingAdSlot.type;
 
-      if (height !== undefined) {
-        updateData.height = validateInteger(height, 'height', { required: false, min: 1, max: 10000, allowNull: true });
+      if (resolvedType === AdSlotType.PODCAST) {
+        updateData.width = null;
+        updateData.height = null;
+      } else {
+        if (width !== undefined) {
+          updateData.width = validateInteger(width, 'width', { required: false, min: 1, max: 10000, allowNull: true });
+        }
+
+        if (height !== undefined) {
+          updateData.height = validateInteger(height, 'height', { required: false, min: 1, max: 10000, allowNull: true });
+        }
       }
 
       if (position !== undefined) {
@@ -470,10 +503,6 @@ router.put('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthR
 
       if (basePrice !== undefined) {
         updateData.basePrice = validateDecimal(basePrice, 'basePrice', { required: true, min: 0, max: 999999.99 });
-      }
-
-      if (isAvailable !== undefined) {
-        updateData.isAvailable = Boolean(isAvailable);
       }
 
       const updatedAdSlot = await prisma.adSlot.update({
@@ -524,6 +553,12 @@ router.delete('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: Au
     if (!adSlot) {
       // Returns 404 for both "not found" and "not owned"
       res.status(404).json({ error: 'Ad slot not found' });
+      return;
+    }
+
+    // Prohibit deletion if the ad slot is booked
+    if (!adSlot.isAvailable) {
+      res.status(409).json({ error: 'Ad slot is booked and cannot be deleted' });
       return;
     }
 

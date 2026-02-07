@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Campaign } from '@/lib/types';
 import { CampaignForm } from './campaign-form';
 import { deleteCampaignAction } from '../actions';
@@ -141,6 +142,7 @@ const statusColors: Record<string, string> = {
 };
 
 export function CampaignCard({ campaign }: CampaignCardProps) {
+  const router = useRouter();
   const progress =
     campaign.budget > 0 ? (Number(campaign.spent) / Number(campaign.budget)) * 100 : 0;
 
@@ -160,14 +162,21 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
   // Close delete modal on success
   useEffect(() => {
     if (deleteState?.success) {
-      setIsDeleteOpen(false);
-      toast({
-        title: 'Campaign deleted',
-        description: 'The campaign was removed.',
-        variant: 'success',
-      });
+      // Small delay before showing toast and refreshing
+      setTimeout(() => {
+        toast({
+          title: 'Campaign deleted',
+          description: 'The campaign was removed.',
+          variant: 'success',
+        });
+        router.refresh();
+        // Delay closing the modal to let the toast mount before the component unmounts
+        setTimeout(() => {
+          setIsDeleteOpen(false);
+        }, 800);
+      }, 300);
     }
-  }, [deleteState?.success]);
+  }, [deleteState?.success, router]);
 
   const status = campaign.status;
   const statusDotColor =
@@ -183,7 +192,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
 
   return (
     <>
-      <div className="group relative rounded-lg border border-[--color-border] bg-[--color-background] p-4 transition hover:shadow-sm focus-within:outline-none focus-within:ring-2 focus-within:ring-[--color-primary]/30">
+      <div className="group relative rounded-lg border border-[--color-border] bg-[--color-background] p-4 transition-all duration-200 hover:shadow-md hover:border-[--color-primary-light] hover:scale-[1.01] focus-within:outline-none focus-within:ring-2 focus-within:ring-[--color-primary]/30">
         <div className="absolute right-3 top-3 flex items-center gap-2">
           <button
             type="button"
@@ -203,16 +212,15 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           </button>
         </div>
 
-        <Link 
+        <Link
           href={`/campaigns/${campaign.id}`}
           className="block"
         >
           <div className="mb-2 flex items-start justify-between pr-24">
             <h3 className="truncate font-semibold hover:text-[--color-primary] transition-colors">{campaign.name}</h3>
             <span
-              className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs ${
-                statusColors[campaign.status] || 'bg-gray-100 text-gray-700'
-              }`}
+              className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs ${statusColors[campaign.status] || 'bg-gray-100 text-gray-700'
+                }`}
             >
               <DotIcon className={`h-2.5 w-2.5 ${statusDotColor}`} />
               {status}
@@ -220,7 +228,7 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
           </div>
         </Link>
 
-        <Link 
+        <Link
           href={`/campaigns/${campaign.id}`}
           className="block"
         >
@@ -240,8 +248,8 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
             </div>
             <div className="mt-1 h-1.5 rounded-full bg-gray-200">
               <div
-                className="h-1.5 rounded-full bg-[--color-primary]"
-                style={{ width: `${Math.min(progress, 100)}%` }}
+                className="h-1.5 rounded-full bg-indigo-600"
+                style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: 'var(--color-primary)' }}
               />
             </div>
           </div>

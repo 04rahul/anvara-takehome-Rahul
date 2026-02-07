@@ -165,6 +165,8 @@ model Placement {
   startDate   DateTime
   endDate     DateTime
 
+  message     String?
+
   status      PlacementStatus @default(PENDING)
 
   createdAt   DateTime @default(now())

@@ -56,14 +56,13 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
 
       {/* Campaign Header */}
       <header className="rounded-lg border border-[--color-border] bg-[--color-background] p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight">{campaign.name}</h1>
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                  statusColors[campaign.status] || 'bg-gray-100 text-gray-700'
-                }`}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${statusColors[campaign.status] || 'bg-gray-100 text-gray-700'
+                  }`}
               >
                 {campaign.status}
               </span>
@@ -82,55 +81,52 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
                 <span className="text-[--color-muted]">End Date:</span>{' '}
                 <span className="font-medium">{formatDate(campaign.endDate)}</span>
               </div>
+              {campaign.cpmRate && (
+                <div>
+                  <span className="text-[--color-muted]">CPM:</span>{' '}
+                  <span className="font-medium">{formatCurrency(campaign.cpmRate)}</span>
+                </div>
+              )}
+              {campaign.cpcRate && (
+                <div>
+                  <span className="text-[--color-muted]">CPC:</span>{' '}
+                  <span className="font-medium">{formatCurrency(campaign.cpcRate)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Budget Overview (Right Side) */}
+          <div className="w-full sm:w-72 sm:border-l border-[--color-border] sm:pl-6">
+            <h3 className="text-sm font-medium text-[--color-muted] mb-3">Budget Overview</h3>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[--color-muted]">Budget</span>
+                  <span className="font-semibold">{formatCurrency(campaign.budget)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[--color-muted]">Spent</span>
+                  <span className="font-semibold">{formatCurrency(campaign.spent)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-2">
+                <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                    style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: 'var(--color-primary)' }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-[--color-muted]">
+                  <span>{Math.min(progress, 100).toFixed(1)}% Used</span>
+                  <span>{formatCurrency(campaign.budget - campaign.spent)} Left</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </header>
-
-      {/* Budget Section */}
-      <section className="rounded-lg border border-[--color-border] bg-[--color-background] p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">Budget & Spending</h2>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[--color-muted]">Budget</span>
-            <span className="text-lg font-semibold">{formatCurrency(campaign.budget)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[--color-muted]">Spent</span>
-            <span className="text-lg font-semibold">{formatCurrency(campaign.spent)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[--color-muted]">Remaining</span>
-            <span className="text-lg font-semibold">
-              {formatCurrency(campaign.budget - campaign.spent)}
-            </span>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-[--color-muted]">
-              <span>Progress</span>
-              <span>{Math.min(progress, 100).toFixed(1)}%</span>
-            </div>
-            <div className="h-3 rounded-full bg-gray-200">
-              <div
-                className="h-3 rounded-full bg-[--color-primary] transition-all"
-                style={{ width: `${Math.min(progress, 100)}%` }}
-              />
-            </div>
-          </div>
-          {campaign.cpmRate && (
-            <div className="pt-2 border-t border-[--color-border]">
-              <span className="text-sm text-[--color-muted]">CPM Rate: </span>
-              <span className="text-sm font-medium">{formatCurrency(campaign.cpmRate)}</span>
-            </div>
-          )}
-          {campaign.cpcRate && (
-            <div>
-              <span className="text-sm text-[--color-muted]">CPC Rate: </span>
-              <span className="text-sm font-medium">{formatCurrency(campaign.cpcRate)}</span>
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* Creatives Section */}
       {creatives.length > 0 && (
@@ -153,20 +149,18 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
                 )}
                 <div className="flex items-center gap-2 text-xs">
                   <span
-                    className={`px-2 py-0.5 rounded ${
-                      creative.isApproved
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}
+                    className={`px-2 py-0.5 rounded ${creative.isApproved
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                      }`}
                   >
                     {creative.isApproved ? 'Approved' : 'Pending'}
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded ${
-                      creative.isActive
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
+                    className={`px-2 py-0.5 rounded ${creative.isActive
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-700'
+                      }`}
                   >
                     {creative.isActive ? 'Active' : 'Inactive'}
                   </span>
@@ -191,85 +185,103 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
             {placements.map((placement: Placement) => (
               <div
                 key={placement.id}
-                className="rounded-lg border border-[--color-border] bg-[--color-background] p-4"
+                className="group rounded-lg border border-[--color-border] bg-[--color-background] p-5 shadow-sm transition-all hover:shadow-md"
               >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  {/* Left Column: Details */}
+                  <div className="flex-1 space-y-4">
+                    {/* Top Row: Name & Status */}
+                    <div className="flex items-start justify-between gap-4 sm:justify-start">
                       <div>
-                        <h3 className="font-semibold text-[--color-foreground]">
-                          {placement.adSlot?.name || 'Unknown Ad Slot'}
-                        </h3>
-                        {placement.adSlot?.type && (
-                          <p className="text-sm text-[--color-muted] mt-1">
-                            Type: {placement.adSlot.type}
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-semibold text-[--color-foreground]">
+                            {placement.adSlot?.name || 'Unknown Ad Slot'}
+                          </h3>
+                          {placement.adSlot?.type && (
+                            <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-[--color-muted] ring-1 ring-inset ring-gray-500/10">
+                              {placement.adSlot.type}
+                            </span>
+                          )}
+                        </div>
+                        {placement.publisher && (
+                          <p className="mt-1 text-sm text-[--color-muted]">
+                            by <span className="font-medium text-[--color-foreground]">{placement.publisher.name}</span>
                           </p>
                         )}
                       </div>
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold whitespace-nowrap ${
-                          placementStatusColors[placement.status] || 'bg-gray-100 text-gray-700'
-                        }`}
+                        className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${placementStatusColors[placement.status] || 'bg-gray-100 text-gray-700'
+                          }`}
                       >
                         {placement.status}
                       </span>
                     </div>
 
-                    {placement.publisher && (
-                      <p className="text-sm text-[--color-muted] mb-2">
-                        Publisher: <span className="font-medium text-[--color-foreground]">{placement.publisher.name}</span>
-                        {placement.publisher.category && (
-                          <span className="text-[--color-muted]"> · {placement.publisher.category}</span>
-                        )}
-                      </p>
-                    )}
-
-                    {placement.creative && (
-                      <p className="text-sm text-[--color-muted] mb-2">
-                        Creative: <span className="font-medium text-[--color-foreground]">{placement.creative.name}</span>
-                        <span className="text-[--color-muted]"> ({placement.creative.type})</span>
-                      </p>
-                    )}
-
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 mt-3 text-sm">
+                    {/* Info Grid */}
+                    <div className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
                       {placement.startDate && placement.endDate && (
-                        <div>
-                          <span className="text-[--color-muted]">Dates:</span>{' '}
+                        <div className="flex flex-col">
+                          <span className="text-xs text-[--color-muted]">Schedule</span>
                           <span className="font-medium">
                             {formatDate(placement.startDate)} - {formatDate(placement.endDate)}
                           </span>
                         </div>
                       )}
-                      {placement.agreedPrice !== undefined && (
-                        <div>
-                          <span className="text-[--color-muted]">Price:</span>{' '}
-                          <span className="font-medium">{formatCurrency(placement.agreedPrice)}</span>
-                          {placement.pricingModel && (
-                            <span className="text-[--color-muted]"> ({placement.pricingModel})</span>
-                          )}
+
+                      {(placement.agreedPrice !== undefined || placement.adSlot?.basePrice !== undefined) && (
+                        <div className="flex flex-col">
+                          <span className="text-xs text-[--color-muted]">Pricing</span>
+                          <div className="flex items-center gap-2">
+                            {placement.agreedPrice !== undefined ? (
+                              <>
+                                <span className="font-medium">{formatCurrency(placement.agreedPrice)}</span>
+                                {placement.pricingModel && (
+                                  <span className="text-[--color-muted]">({placement.pricingModel})</span>
+                                )}
+                              </>
+                            ) : placement.adSlot?.basePrice !== undefined ? (
+                              <span className="font-medium">{formatCurrency(placement.adSlot.basePrice)} <span className="text-[--color-muted] font-normal">(Base)</span></span>
+                            ) : null}
+                          </div>
                         </div>
                       )}
-                      {placement.adSlot?.basePrice !== undefined && (
-                        <div>
-                          <span className="text-[--color-muted]">Base Price:</span>{' '}
-                          <span className="font-medium">{formatCurrency(placement.adSlot.basePrice)}</span>
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-[--color-muted]">Impressions:</span>{' '}
-                        <span className="font-medium">{placement.impressions.toLocaleString()}</span>
-                      </div>
-                      <div>
-                        <span className="text-[--color-muted]">Clicks:</span>{' '}
-                        <span className="font-medium">{placement.clicks.toLocaleString()}</span>
-                      </div>
-                      {placement.conversions !== undefined && (
-                        <div>
-                          <span className="text-[--color-muted]">Conversions:</span>{' '}
-                          <span className="font-medium">{placement.conversions.toLocaleString()}</span>
+
+                      {placement.creative && (
+                        <div className="flex flex-col sm:col-span-2 mt-1">
+                          <span className="text-xs text-[--color-muted]">Creative</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{placement.creative.name}</span>
+                            <span className="text-xs text-[--color-muted]">({placement.creative.type})</span>
+                          </div>
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Right Column: Performance Metrics */}
+                  <div className="flex w-full shrink-0 flex-row items-center justify-between gap-6 rounded-lg bg-[--color-surface-hover] px-6 py-4 lg:w-auto lg:gap-12 lg:rounded-none lg:bg-transparent lg:px-0 lg:py-0 lg:border-l lg:border-[--color-border] lg:pl-8">
+                    <div className="text-center w-full lg:w-auto">
+                      <div className="text-2xl font-bold tracking-tight text-[--color-foreground]">
+                        {placement.impressions.toLocaleString()}
+                      </div>
+                      <div className="text-xs font-medium text-[--color-muted] uppercase tracking-wider mt-1">Impressions</div>
+                    </div>
+
+                    <div className="text-center w-full lg:w-auto">
+                      <div className="text-2xl font-bold tracking-tight text-[--color-foreground]">
+                        {placement.clicks.toLocaleString()}
+                      </div>
+                      <div className="text-xs font-medium text-[--color-muted] uppercase tracking-wider mt-1">Clicks</div>
+                    </div>
+
+                    {placement.conversions !== undefined && (
+                      <div className="text-center w-full lg:w-auto">
+                        <div className="text-2xl font-bold tracking-tight text-[--color-foreground]">
+                          {placement.conversions.toLocaleString()}
+                        </div>
+                        <div className="text-xs font-medium text-[--color-muted] uppercase tracking-wider mt-1">Conversions</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

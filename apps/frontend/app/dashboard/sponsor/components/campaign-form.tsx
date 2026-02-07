@@ -2,8 +2,11 @@
 
 import { useActionState, useEffect, useMemo, useState, type WheelEventHandler } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Alert } from '@/app/components/ui/alert';
 import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
 import { Select } from '@/app/components/ui/select';
+import { Textarea } from '@/app/components/ui/textarea';
 import {
   createCampaignAction,
   updateCampaignAction,
@@ -137,9 +140,6 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
     }
   }, [state?.success, onSuccess]);
 
-  const inputClassName =
-    'w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
-
   return (
     <div className="text-[--color-foreground]">
       <div className="mb-6 space-y-1 pr-10">
@@ -152,218 +152,206 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
       </div>
 
       {state?.error && (
-        <div
-          role="alert"
-          className="mb-4 rounded-lg border border-[color-mix(in_oklab,var(--color-error)_35%,var(--color-border))] bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-background))] p-4 text-[var(--color-error)]"
-        >
+        <Alert variant="error" className="mb-4">
           {state.error}
-        </div>
+        </Alert>
       )}
 
-      <form action={formAction} className="flex max-h-[70vh] flex-col">
+      <form action={formAction} className="flex flex-col">
         {isEdit && <input type="hidden" name="id" value={values.id} />}
         {isEdit && <input type="hidden" name="spent" value={values.spent} />}
 
-        <div className="flex-1 space-y-5 overflow-y-auto pr-1">
+        <div className="space-y-5 pr-1">
           <div>
             <label htmlFor="name" className="mb-2 block text-sm font-medium text-[--color-foreground]">
               Name <span className="text-[var(--color-error)]">*</span>
             </label>
-            <input
+            <Input
               type="text"
               id="name"
               name="name"
               required
               value={values.name}
               onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-              className={inputClassName}
             />
             {state?.fieldErrors?.name && (
               <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.name}</p>
             )}
           </div>
 
-        <div>
-          <label htmlFor="description" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={3}
-            value={values.description}
-            onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
-            className={inputClassName}
-          />
-          {state?.fieldErrors?.description && (
-            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.description}</p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="budget" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Budget ($) <span className="text-[var(--color-error)]">*</span>
-          </label>
-          <input
-            type="number"
-            id="budget"
-            name="budget"
-            required
-            min={isEdit ? spentAmount : 1}
-            step="0.01"
-            value={values.budget}
-            onWheel={blurOnWheel}
-            onChange={(e) => setValues((v) => ({ ...v, budget: e.target.value }))}
-            className={inputClassName}
-          />
-          {isEdit && spentAmount > 0 && (
-            <p className="mt-1 text-xs text-[--color-muted]">
-              Already spent: <span className="font-medium text-[--color-foreground]">${spentAmount.toLocaleString()}</span> (budget can’t be set lower)
-            </p>
-          )}
-          {state?.fieldErrors?.budget && (
-            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.budget}</p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="cpmRate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              CPM Rate ($)
+            <label htmlFor="description" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+              Description
             </label>
-            <input
+            <Textarea
+              id="description"
+              name="description"
+              rows={3}
+              value={values.description}
+              onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
+            />
+            {state?.fieldErrors?.description && (
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.description}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="budget" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+              Budget ($) <span className="text-[var(--color-error)]">*</span>
+            </label>
+            <Input
               type="number"
-              id="cpmRate"
-              name="cpmRate"
-              min="0"
+              id="budget"
+              name="budget"
+              required
+              min={isEdit ? spentAmount : 1}
               step="0.01"
-              value={values.cpmRate}
+              value={values.budget}
               onWheel={blurOnWheel}
-              onChange={(e) => setValues((v) => ({ ...v, cpmRate: e.target.value }))}
-              className={inputClassName}
+              onChange={(e) => setValues((v) => ({ ...v, budget: e.target.value }))}
             />
-            {state?.fieldErrors?.cpmRate && (
-              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.cpmRate}</p>
+            {isEdit && spentAmount > 0 && (
+              <p className="mt-1 text-xs text-[--color-muted]">
+                Already spent: <span className="font-medium text-[--color-foreground]">${spentAmount.toLocaleString()}</span> (budget can’t be set lower)
+              </p>
+            )}
+            {state?.fieldErrors?.budget && (
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.budget}</p>
             )}
           </div>
 
-          <div>
-            <label htmlFor="cpcRate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              CPC Rate ($)
-            </label>
-            <input
-              type="number"
-              id="cpcRate"
-              name="cpcRate"
-              min="0"
-              step="0.01"
-              value={values.cpcRate}
-              onWheel={blurOnWheel}
-              onChange={(e) => setValues((v) => ({ ...v, cpcRate: e.target.value }))}
-              className={inputClassName}
-            />
-            {state?.fieldErrors?.cpcRate && (
-              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.cpcRate}</p>
-            )}
-          </div>
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="cpmRate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+                CPM Rate ($)
+              </label>
+              <Input
+                type="number"
+                id="cpmRate"
+                name="cpmRate"
+                min="0"
+                step="0.01"
+                value={values.cpmRate}
+                onWheel={blurOnWheel}
+                onChange={(e) => setValues((v) => ({ ...v, cpmRate: e.target.value }))}
+              />
+              {state?.fieldErrors?.cpmRate && (
+                <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.cpmRate}</p>
+              )}
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="startDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Start Date <span className="text-[var(--color-error)]">*</span>
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              name="startDate"
-              required={!isEdit}
-              disabled={isStartDateLocked}
-              value={values.startDate}
-              onChange={(e) => setValues((v) => ({ ...v, startDate: e.target.value }))}
-              className={inputClassName}
-            />
-            {state?.fieldErrors?.startDate && (
-              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.startDate}</p>
-            )}
+            <div>
+              <label htmlFor="cpcRate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+                CPC Rate ($)
+              </label>
+              <Input
+                type="number"
+                id="cpcRate"
+                name="cpcRate"
+                min="0"
+                step="0.01"
+                value={values.cpcRate}
+                onWheel={blurOnWheel}
+                onChange={(e) => setValues((v) => ({ ...v, cpcRate: e.target.value }))}
+              />
+              {state?.fieldErrors?.cpcRate && (
+                <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.cpcRate}</p>
+              )}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="endDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              End Date <span className="text-[var(--color-error)]">*</span>
-            </label>
-            <input
-              type="date"
-              id="endDate"
-              name="endDate"
-              required={!isEdit}
-              value={values.endDate}
-              onChange={(e) => setValues((v) => ({ ...v, endDate: e.target.value }))}
-              className={inputClassName}
-            />
-            {state?.fieldErrors?.endDate && (
-              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.endDate}</p>
-            )}
-          </div>
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="startDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+                Start Date <span className="text-[var(--color-error)]">*</span>
+              </label>
+              <Input
+                type="date"
+                id="startDate"
+                name="startDate"
+                required={!isEdit}
+                disabled={isStartDateLocked}
+                value={values.startDate}
+                onChange={(e) => setValues((v) => ({ ...v, startDate: e.target.value }))}
+              />
+              {state?.fieldErrors?.startDate && (
+                <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.startDate}</p>
+              )}
+            </div>
 
-        {isEdit && (
-          <div>
-            <label htmlFor="status" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Status
-            </label>
-            <Select
-              id="status"
-              name="status"
-              value={values.status}
-              onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))}
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="ACTIVE">Active</option>
-              <option value="PAUSED">Paused</option>
-              <option value="COMPLETED">Completed</option>
-            </Select>
-            {state?.fieldErrors?.status && (
-              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.status}</p>
-            )}
+            <div>
+              <label htmlFor="endDate" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+                End Date <span className="text-[var(--color-error)]">*</span>
+              </label>
+              <Input
+                type="date"
+                id="endDate"
+                name="endDate"
+                required={!isEdit}
+                value={values.endDate}
+                onChange={(e) => setValues((v) => ({ ...v, endDate: e.target.value }))}
+              />
+              {state?.fieldErrors?.endDate && (
+                <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.endDate}</p>
+              )}
+            </div>
           </div>
-        )}
 
-        <div>
-          <label htmlFor="targetCategories" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Target Categories (comma-separated)
-          </label>
-          <input
-            type="text"
-            id="targetCategories"
-            name="targetCategories"
-            value={values.targetCategories}
-            onChange={(e) => setValues((v) => ({ ...v, targetCategories: e.target.value }))}
-            placeholder="e.g., Technology, Business, Health"
-            className={inputClassName}
-          />
-          {state?.fieldErrors?.targetCategories && (
-            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.targetCategories}</p>
+          {isEdit && (
+            <div>
+              <label htmlFor="status" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+                Status
+              </label>
+              <Select
+                id="status"
+                name="status"
+                value={values.status}
+                onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))}
+              >
+                <option value="DRAFT">Draft</option>
+                <option value="ACTIVE">Active</option>
+                <option value="PAUSED">Paused</option>
+                <option value="COMPLETED">Completed</option>
+              </Select>
+              {state?.fieldErrors?.status && (
+                <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.status}</p>
+              )}
+            </div>
           )}
-        </div>
 
-        <div>
-          <label htmlFor="targetRegions" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Target Regions (comma-separated)
-          </label>
-          <input
-            type="text"
-            id="targetRegions"
-            name="targetRegions"
-            value={values.targetRegions}
-            onChange={(e) => setValues((v) => ({ ...v, targetRegions: e.target.value }))}
-            placeholder="e.g., US, UK, CA"
-            className={inputClassName}
-          />
-          {state?.fieldErrors?.targetRegions && (
-            <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.targetRegions}</p>
-          )}
-        </div>
+          <div>
+            <label htmlFor="targetCategories" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+              Target Categories (comma-separated)
+            </label>
+            <Input
+              type="text"
+              id="targetCategories"
+              name="targetCategories"
+              value={values.targetCategories}
+              onChange={(e) => setValues((v) => ({ ...v, targetCategories: e.target.value }))}
+              placeholder="e.g., Technology, Business, Health"
+            />
+            {state?.fieldErrors?.targetCategories && (
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.targetCategories}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="targetRegions" className="mb-2 block text-sm font-medium text-[--color-foreground]">
+              Target Regions (comma-separated)
+            </label>
+            <Input
+              type="text"
+              id="targetRegions"
+              name="targetRegions"
+              value={values.targetRegions}
+              onChange={(e) => setValues((v) => ({ ...v, targetRegions: e.target.value }))}
+              placeholder="e.g., US, UK, CA"
+            />
+            {state?.fieldErrors?.targetRegions && (
+              <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.targetRegions}</p>
+            )}
+          </div>
 
         </div>
 

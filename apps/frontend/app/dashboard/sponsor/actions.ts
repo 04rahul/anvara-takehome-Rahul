@@ -420,8 +420,8 @@ export async function deleteCampaignAction(
     // Call backend API
     await deleteCampaign(id, cookieHeader);
 
-    // Revalidate the dashboard page
-    revalidatePath('/dashboard/sponsor');
+    // Revalidate the dashboard page - moved to client side to show toast
+    // revalidatePath('/dashboard/sponsor');
 
     return { success: true };
   } catch (error) {

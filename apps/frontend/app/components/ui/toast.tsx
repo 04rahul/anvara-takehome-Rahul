@@ -61,6 +61,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {items.map((t) => (
         <ToastPrimitive.Root
           key={t.id}
+          open={true}
+          defaultOpen={true}
           duration={t.durationMs}
           onOpenChange={(open) => {
             if (!open) setItems((prev) => prev.filter((x) => x.id !== t.id));

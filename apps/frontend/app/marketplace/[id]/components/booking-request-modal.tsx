@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/app/components/ui/dialog';
@@ -11,6 +11,7 @@ import { Alert } from '@/app/components/ui/alert';
 import { getCampaigns, getCampaign } from '@/lib/api';
 import { logger } from '@/lib/utils';
 import { requestPlacementAction, type RequestPlacementFormState } from '../actions';
+import { toast } from '@/app/components/ui/toast';
 import type { AdSlot, Campaign } from '@/lib/types';
 
 interface BookingRequestModalProps {
@@ -60,6 +61,8 @@ export function BookingRequestModal({
     message: '',
   });
 
+  const toastShownRef = useRef(false);
+
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
@@ -74,8 +77,11 @@ export function BookingRequestModal({
       });
       setRequestState(null);
       setCreatives([]);
+      toastShownRef.current = false;
     }
   }, [open]);
+
+  // ... (keeping other effects unchanged)
 
   // Load campaigns
   useEffect(() => {
@@ -208,10 +214,20 @@ export function BookingRequestModal({
   // Close modal and call onSuccess on successful submission
   useEffect(() => {
     if (requestState?.success) {
+      if (!toastShownRef.current) {
+        toast({
+          title: 'Request sent',
+          description: 'Your placement request has been sent to the publisher.',
+          variant: 'success',
+        });
+        toastShownRef.current = true;
+      }
       onSuccess?.();
       onOpenChange(false);
+    } else {
+      toastShownRef.current = false;
     }
-  }, [requestState?.success, onSuccess, onOpenChange]);
+  }, [requestState, onSuccess, onOpenChange]);
 
   const handleSubmit = async (formData: FormData) => {
     formData.append('adSlotId', adSlot.id);
@@ -219,31 +235,19 @@ export function BookingRequestModal({
     setRequestState(result);
   };
 
-  const basePriceFormatted = `$${Number(adSlot.basePrice).toLocaleString()}`;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#F9FAFB] dark:bg-[--color-background]">
         <DialogHeader>
           <DialogTitle>Request Placement</DialogTitle>
           <DialogDescription>
-            Submit a placement request for <strong>{adSlot.name}</strong>. The publisher will review and approve or reject it.
+            <span className="font-medium text-[--color-foreground]">{adSlot.name}</span> <span className="text-[--color-muted]">by</span> <span className="font-medium text-[--color-foreground]">{adSlot.publisher?.name}</span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mb-4 rounded-lg border border-[--color-border] bg-[--color-background] p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-[--color-foreground]">{adSlot.name}</p>
-              <p className="mt-1 text-sm text-[--color-muted]">by {adSlot.publisher?.name}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-[--color-muted]">Base price</p>
-              <p className="text-lg font-semibold text-[--color-primary]">{basePriceFormatted}</p>
-              <p className="text-xs text-[--color-muted]">per month</p>
-            </div>
-          </div>
-        </div>
+
 
         {campaignsError && <Alert variant="error" className="mb-4">{campaignsError}</Alert>}
 
@@ -387,11 +391,7 @@ export function BookingRequestModal({
             <input type="hidden" name="basePrice" value={String(adSlot.basePrice ?? 0)} />
 
             <div className="space-y-4">
-              {/* Base Price Display */}
-              <div className="flex items-center justify-between rounded-md bg-[--color-background] p-3">
-                <span className="text-sm text-[--color-muted]">Base price (per month)</span>
-                <span className="text-lg font-semibold text-[--color-foreground]">{basePriceFormatted}</span>
-              </div>
+
 
               {/* Pricing Model Selection */}
               <div>

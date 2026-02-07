@@ -16,8 +16,8 @@ export default async function PublisherDashboard() {
   // Get cookies for server-side API calls
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('better-auth.session_token');
-  const cookieHeader = sessionCookie 
-    ? `better-auth.session_token=${sessionCookie.value}` 
+  const cookieHeader = sessionCookie
+    ? `better-auth.session_token=${sessionCookie.value}`
     : undefined;
 
   // Verify user has 'publisher' role
@@ -50,12 +50,14 @@ export default async function PublisherDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Placement requests</h1>
-        </div>
-        <PlacementRequests placements={pendingPlacements} error={placementsError} />
-      </section>
+      {(pendingPlacements.length > 0 || placementsError) && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Placement requests</h1>
+          </div>
+          <PlacementRequests placements={pendingPlacements} error={placementsError} />
+        </section>
+      )}
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">My Ad Slots</h1>

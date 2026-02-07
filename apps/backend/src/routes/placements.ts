@@ -74,6 +74,7 @@ router.post('/', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReque
       pricingModel,
       startDate,
       endDate,
+      message,
     } = req.body;
 
     if (!campaignId || !creativeId || !adSlotId || !agreedPrice || !startDate || !endDate) {
@@ -104,6 +105,7 @@ router.post('/', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthReque
         pricingModel: pricingModel || 'CPM',
         startDate: new Date(startDate),
         endDate: new Date(endDate),
+        message,
       },
       include: {
         campaign: { select: { name: true } },
@@ -142,7 +144,7 @@ router.patch('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: Aut
     const updated = await prisma.$transaction(async (tx) => {
       const placement = await tx.placement.findUnique({
         where: { id },
-        include: { 
+        include: {
           adSlot: { select: { id: true, isAvailable: true, basePrice: true } },
           campaign: { select: { id: true, startDate: true, endDate: true } },
         },

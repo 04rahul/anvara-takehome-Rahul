@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { createAdSlot, updateAdSlot, deleteAdSlot, updatePlacementStatus } from '@/lib/api';
+import { createAdSlot, updateAdSlot, deleteAdSlot, getAdSlot, updatePlacementStatus } from '@/lib/api';
 
 export interface AdSlotFormState {
   success?: boolean;
@@ -21,7 +21,6 @@ export interface AdSlotFormValues {
   height: string;
   position: string;
   basePrice: string;
-  isAvailable?: boolean;
 }
 
 export async function createAdSlotAction(
@@ -54,8 +53,9 @@ export async function createAdSlotAction(
     const name = values.name;
     const description = values.description || null;
     const type = values.type;
-    const width = values.width || null;
-    const height = values.height || null;
+    // If type is PODCAST, force width/height to null (skip validation)
+    const width = type === 'PODCAST' ? null : (values.width || null);
+    const height = type === 'PODCAST' ? null : (values.height || null);
     const position = values.position || null;
     const basePrice = values.basePrice;
 
@@ -147,7 +147,6 @@ export async function updateAdSlotAction(
       height: (formData.get('height') as string | null) ?? '',
       position: (formData.get('position') as string | null) ?? '',
       basePrice: (formData.get('basePrice') as string) ?? '',
-      isAvailable: ((formData.get('isAvailable') as string | null) ?? 'true') === 'true',
     };
 
     // Get session cookie
@@ -167,11 +166,11 @@ export async function updateAdSlotAction(
     const name = values.name;
     const description = values.description || null;
     const type = values.type;
-    const width = values.width || null;
-    const height = values.height || null;
+    // If type is PODCAST, force width/height to null (skip validation)
+    const width = type === 'PODCAST' ? null : (values.width || null);
+    const height = type === 'PODCAST' ? null : (values.height || null);
     const position = values.position || null;
     const basePrice = values.basePrice;
-    const isAvailable = values.isAvailable;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -179,8 +178,15 @@ export async function updateAdSlotAction(
       return { error: 'Ad slot ID is required', values };
     }
 
-    if (currentIsAvailable === 'false') {
-      return { error: 'This placement is booked and cannot be edited.', values };
+    // Backend validation: Check if ad slot is booked before allowing updates
+    try {
+      const adSlot = await getAdSlot(id);
+      if (!adSlot.isAvailable) {
+        return { error: 'This ad slot is already booked and cannot be edited.', values };
+      }
+    } catch (error) {
+      console.error('Error fetching ad slot for validation:', error);
+      return { error: 'Failed to validate ad slot status', values };
     }
 
     if (!name || name.trim().length === 0) {
@@ -218,20 +224,22 @@ export async function updateAdSlotAction(
       data.description = description && description.trim().length > 0 ? description.trim() : null;
     }
 
-    if (width !== null) {
-      data.width = width ? Number(width) : null;
-    }
+    if (type === 'PODCAST') {
+      // Explicitly clear width/height for PODCAST
+      data.width = null;
+      data.height = null;
+    } else {
+      if (width !== null) {
+        data.width = width ? Number(width) : null;
+      }
 
-    if (height !== null) {
-      data.height = height ? Number(height) : null;
+      if (height !== null) {
+        data.height = height ? Number(height) : null;
+      }
     }
 
     if (position !== null) {
       data.position = position && position.trim().length > 0 ? position.trim() : null;
-    }
-
-    if (typeof isAvailable === 'boolean') {
-      data.isAvailable = isAvailable;
     }
 
     // Call backend API
@@ -255,7 +263,6 @@ export async function updateAdSlotAction(
         height: (formData.get('height') as string | null) ?? '',
         position: (formData.get('position') as string | null) ?? '',
         basePrice: (formData.get('basePrice') as string) ?? '',
-        isAvailable: ((formData.get('isAvailable') as string | null) ?? 'true') === 'true',
       },
     };
   }
@@ -284,11 +291,22 @@ export async function deleteAdSlotAction(
       return { error: 'Ad slot ID is required' };
     }
 
+    // Backend validation: Check if ad slot is booked before allowing deletion
+    try {
+      const adSlot = await getAdSlot(id);
+      if (!adSlot.isAvailable) {
+        return { error: 'This ad slot is already booked and cannot be deleted.' };
+      }
+    } catch (error) {
+      console.error('Error fetching ad slot for validation:', error);
+      return { error: 'Failed to validate ad slot status' };
+    }
+
     // Call backend API
     await deleteAdSlot(id, cookieHeader);
 
-    // Revalidate the dashboard page
-    revalidatePath('/dashboard/publisher');
+    // Revalidate the dashboard page - moved to client side to show toast
+    // revalidatePath('/dashboard/publisher');
 
     return { success: true };
   } catch (error) {

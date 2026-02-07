@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // Added useRouter
 import Link from 'next/link';
-import { getAdSlot } from '@/lib/api';
+import { getAdSlot, unbookAdSlot } from '@/lib/api'; // Added unbookAdSlot
 import { useSession } from '@/lib/session-context';
 import type { AdSlot } from '@/lib/types';
 import type { RoleData } from '@/lib/auth-helpers';
@@ -100,6 +101,8 @@ export function AdSlotDetail({ id }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [unbooking, setUnbooking] = useState(false); // Added unbooking state
+  const router = useRouter(); // Added router
 
   const isSponsor = roleInfo?.role === 'sponsor' && !!roleInfo?.sponsorId;
 
@@ -133,6 +136,29 @@ export function AdSlotDetail({ id }: Props) {
   const publisherWebsite = adSlot.publisher?.website;
 
   const availabilityLabel = adSlot.isAvailable ? 'Available' : 'Currently booked';
+
+  // Demo user check
+  const isDemoUser = user?.email === 'sponsor@example.com' || user?.email === 'publisher@example.com';
+
+  const handleUnbook = async () => {
+    if (!confirm('Are you sure you want to unbook this slot? This will remove the current placement.')) {
+      return;
+    }
+
+    setUnbooking(true);
+    try {
+      await unbookAdSlot(id);
+      // Refresh ad slot data
+      const updatedSlot = await getAdSlot(id);
+      setAdSlot(updatedSlot);
+      router.refresh();
+    } catch (err: any) {
+      console.error('Failed to unbook:', err);
+      alert('Failed to unbook: ' + (err.message || 'Unknown error'));
+    } finally {
+      setUnbooking(false);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -211,11 +237,10 @@ export function AdSlotDetail({ id }: Props) {
                 <div className="text-sm text-[--color-muted]">per month</div>
               </div>
               <span
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${
-                  adSlot.isAvailable
-                    ? 'border-green-200 bg-green-50 text-green-800'
-                    : 'border-[--color-border] bg-[--color-background] text-[--color-muted]'
-                }`}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${adSlot.isAvailable
+                  ? 'border-green-200 bg-green-50 text-green-800'
+                  : 'border-[--color-border] bg-[--color-background] text-[--color-muted]'
+                  }`}
               >
                 <span
                   aria-hidden="true"
@@ -231,6 +256,23 @@ export function AdSlotDetail({ id }: Props) {
                   <Alert variant="info" title="This placement is booked">
                     Check back later, or browse other available slots.
                   </Alert>
+
+                  {/* Demo Unbook Button */}
+                  {isDemoUser && (
+                    <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                      <p className="mb-2 text-xs font-medium text-blue-800">Demo Action</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUnbook}
+                        disabled={unbooking}
+                        className="w-full border-blue-300 text-blue-900 hover:bg-blue-100 hover:border-blue-400"
+                      >
+                        {unbooking ? 'Unbooking...' : 'Unbook Slot (Demo)'}
+                      </Button>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between gap-3">
                     <ButtonLink variant="secondary" className="flex-1" href="/marketplace">
                       Browse marketplace

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { AdSlot } from '@/lib/types';
@@ -112,6 +113,7 @@ function CheckCircleIcon(props: React.SVGProps<SVGSVGElement>) {
         d="M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10Z"
         stroke="currentColor"
         strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         d="m8 12 2.5 2.5L16 9"
@@ -131,6 +133,7 @@ function XCircleIcon(props: React.SVGProps<SVGSVGElement>) {
         d="M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10Z"
         stroke="currentColor"
         strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
         d="m15 9-6 6M9 9l6 6"
@@ -155,6 +158,7 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteState, deleteAction] = useActionState(deleteAdSlotAction, null);
   const lastDeleteToastKeyRef = useRef<string | null>(null);
+  const router = useRouter();
 
   function DeleteButton() {
     const { pending } = useFormStatus();
@@ -168,14 +172,21 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
   // Close delete modal on success
   useEffect(() => {
     if (deleteState?.success) {
-      setIsDeleteOpen(false);
-      toast({
-        title: 'Ad slot deleted',
-        description: 'The ad slot was removed.',
-        variant: 'success',
-      });
+      // Small delay before showing toast and refreshing
+      setTimeout(() => {
+        toast({
+          title: 'Ad slot deleted',
+          description: 'The ad slot was removed.',
+          variant: 'success',
+        });
+        router.refresh();
+        // Delay closing the modal to let the toast mount before the component unmounts
+        setTimeout(() => {
+          setIsDeleteOpen(false);
+        }, 800);
+      }, 300);
     }
-  }, [deleteState?.success]);
+  }, [deleteState?.success, router]);
 
   useEffect(() => {
     if (!deleteState?.error) return;
@@ -196,7 +207,7 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
 
   return (
     <>
-      <div className="group relative rounded-lg border border-[--color-border] bg-[--color-background] p-4 transition hover:shadow-sm focus-within:outline-none focus-within:ring-2 focus-within:ring-[--color-primary]/30">
+      <div className="group relative rounded-lg border border-[--color-border] bg-[--color-background] p-4 transition-all duration-200 hover:shadow-md hover:border-[--color-primary-light] hover:scale-[1.01] focus-within:outline-none focus-within:ring-2 focus-within:ring-[--color-primary]/30">
         <div className="absolute right-3 top-3 flex items-center gap-2">
           <Link
             href={`/marketplace/${adSlot.id}`}
@@ -226,8 +237,19 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
           </button>
           <button
             type="button"
-            className={`${actionButtonClassName} text-red-600 hover:border-red-300 focus-visible:ring-red-500`}
-            onClick={() => setIsDeleteOpen(true)}
+            className={`${actionButtonClassName} text-red-600 hover:border-red-300 focus-visible:ring-red-500 ${!adSlot.isAvailable ? 'cursor-not-allowed opacity-50 hover:bg-[--color-background] hover:border-[--color-border] hover:shadow-none active:scale-100' : ''}`}
+            aria-disabled={!adSlot.isAvailable}
+            onClick={() => {
+              if (!adSlot.isAvailable) {
+                toast({
+                  title: 'Booked placement',
+                  description: 'This placement is already booked and cannot be deleted.',
+                  variant: 'default',
+                });
+                return;
+              }
+              setIsDeleteOpen(true);
+            }}
             aria-label={`Delete ${adSlot.name}`}
           >
             <TrashIcon className="h-4 w-4" />
@@ -239,9 +261,8 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
             <h3 className="truncate font-semibold">{adSlot.name}</h3>
           </div>
           <span
-            className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs ${
-              typeColors[adSlot.type] || 'bg-gray-100 text-gray-700'
-            }`}
+            className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs ${typeColors[adSlot.type] || 'bg-gray-100 text-gray-700'
+              }`}
           >
             <TagIcon className="h-3.5 w-3.5" />
             {adSlot.type}
@@ -254,9 +275,8 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
 
         <div className="mb-1 flex items-center justify-between">
           <span
-            className={`inline-flex items-center gap-1 text-sm ${
-              adSlot.isAvailable ? 'text-green-700' : 'text-[--color-muted]'
-            }`}
+            className={`inline-flex items-center gap-1 text-sm ${adSlot.isAvailable ? 'text-green-700' : 'text-[--color-muted]'
+              }`}
           >
             {adSlot.isAvailable ? (
               <CheckCircleIcon className="h-4 w-4" />

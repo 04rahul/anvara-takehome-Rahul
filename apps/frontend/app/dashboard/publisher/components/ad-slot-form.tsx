@@ -2,8 +2,11 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState, type WheelEventHandler } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Alert } from '@/app/components/ui/alert';
 import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
 import { Select } from '@/app/components/ui/select';
+import { Textarea } from '@/app/components/ui/textarea';
 import { toast } from '@/app/components/ui/toast';
 import {
   createAdSlotAction,
@@ -91,7 +94,6 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
     setValues((prev) => ({
       ...prev,
       ...serverValues,
-      isAvailable: serverValues.isAvailable ?? prev.isAvailable,
     }));
   }, [state?.values]);
 
@@ -127,9 +129,6 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
     });
   }, [state?.error, isEdit]);
 
-  const inputClassName =
-    'w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-[--color-foreground] placeholder:text-[--color-muted] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50';
-
   return (
     <div className="text-[--color-foreground]">
       <div className="mb-6 space-y-1 pr-10">
@@ -142,17 +141,14 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
       </div>
 
       {state?.error && (
-        <div
-          role="alert"
-          className="mb-4 rounded-lg border border-[color-mix(in_oklab,var(--color-error)_35%,var(--color-border))] bg-[color-mix(in_oklab,var(--color-error)_10%,var(--color-background))] p-4 text-[--color-error]"
-        >
+        <Alert variant="error" className="mb-4">
           {state.error}
-        </div>
+        </Alert>
       )}
 
       <form
         action={formAction}
-        className="flex max-h-[70vh] flex-col"
+        className="flex flex-col"
         onSubmit={() => {
           // Allow toasts to fire again for subsequent submissions.
           lastToastKeyRef.current = null;
@@ -161,23 +157,22 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
         {isEdit && <input type="hidden" name="id" value={values.id} />}
         {isEdit && <input type="hidden" name="currentIsAvailable" value={values.currentIsAvailable} />}
 
-        <div className="flex-1 space-y-5 overflow-y-auto pr-1">
+        <div className="space-y-5 pr-1">
           <div>
             <label htmlFor="name" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Name <span className="text-[--color-error]">*</span>
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            required
-            value={values.name}
-            onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-              className={inputClassName}
-          />
-          {state?.fieldErrors?.name && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.name}</p>
-          )}
+              Name <span className="text-[--color-error]">*</span>
+            </label>
+            <Input
+              type="text"
+              id="name"
+              name="name"
+              required
+              value={values.name}
+              onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
+            />
+            {state?.fieldErrors?.name && (
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.name}</p>
+            )}
           </div>
 
           <div>
@@ -185,141 +180,118 @@ export function AdSlotForm({ adSlot, onSuccess, onCancel }: AdSlotFormProps) {
               htmlFor="description"
               className="mb-2 block text-sm font-medium text-[--color-foreground]"
             >
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={3}
-            value={values.description}
-            onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
-              className={inputClassName}
-          />
-          {state?.fieldErrors?.description && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.description}</p>
-          )}
+              Description
+            </label>
+            <Textarea
+              id="description"
+              name="description"
+              rows={3}
+              value={values.description}
+              onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
+            />
+            {state?.fieldErrors?.description && (
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.description}</p>
+            )}
           </div>
 
           <div>
             <label htmlFor="type" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Type <span className="text-[--color-error]">*</span>
-          </label>
-          <Select
-            id="type"
-            name="type"
-            required
-            value={values.type}
-            onChange={(e) => setValues((v) => ({ ...v, type: e.target.value }))}
-          >
-            <option value="DISPLAY">Display</option>
-            <option value="VIDEO">Video</option>
-            <option value="NEWSLETTER">Newsletter</option>
-            <option value="PODCAST">Podcast</option>
-          </Select>
-          {state?.fieldErrors?.type && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.type}</p>
-          )}
+              Type <span className="text-[--color-error]">*</span>
+            </label>
+            <Select
+              id="type"
+              name="type"
+              required
+              value={values.type}
+              onChange={(e) => setValues((v) => ({ ...v, type: e.target.value }))}
+            >
+              <option value="DISPLAY">Display</option>
+              <option value="VIDEO">Video</option>
+              <option value="NEWSLETTER">Newsletter</option>
+              <option value="PODCAST">Podcast</option>
+            </Select>
+            {state?.fieldErrors?.type && (
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.type}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="width" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Width (px)
-            </label>
-            <input
-              type="number"
-              id="width"
-              name="width"
-              min="1"
-              value={values.width}
-              onWheel={blurOnWheel}
-              onChange={(e) => setValues((v) => ({ ...v, width: e.target.value }))}
-                className={inputClassName}
-            />
-            {state?.fieldErrors?.width && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.width}</p>
-            )}
+                Width (px)
+              </label>
+              <Input
+                type="number"
+                id="width"
+                name="width"
+                min="1"
+                value={values.width}
+                onWheel={blurOnWheel}
+                onChange={(e) => setValues((v) => ({ ...v, width: e.target.value }))}
+                disabled={values.type === 'PODCAST'}
+              />
+              {state?.fieldErrors?.width && (
+                <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.width}</p>
+              )}
             </div>
 
             <div>
               <label htmlFor="height" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-              Height (px)
-            </label>
-            <input
-              type="number"
-              id="height"
-              name="height"
-              min="1"
-              value={values.height}
-              onWheel={blurOnWheel}
-              onChange={(e) => setValues((v) => ({ ...v, height: e.target.value }))}
-                className={inputClassName}
-            />
-            {state?.fieldErrors?.height && (
-              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.height}</p>
-            )}
+                Height (px)
+              </label>
+              <Input
+                type="number"
+                id="height"
+                name="height"
+                min="1"
+                value={values.height}
+                onWheel={blurOnWheel}
+                onChange={(e) => setValues((v) => ({ ...v, height: e.target.value }))}
+                disabled={values.type === 'PODCAST'}
+              />
+              {state?.fieldErrors?.height && (
+                <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.height}</p>
+              )}
             </div>
           </div>
 
           <div>
             <label htmlFor="position" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Position
-          </label>
-          <input
-            type="text"
-            id="position"
-            name="position"
-            value={values.position}
-            onChange={(e) => setValues((v) => ({ ...v, position: e.target.value }))}
-              className={inputClassName}
-          />
-          {state?.fieldErrors?.position && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.position}</p>
-          )}
+              Position
+            </label>
+            <Input
+              type="text"
+              id="position"
+              name="position"
+              value={values.position}
+              onChange={(e) => setValues((v) => ({ ...v, position: e.target.value }))}
+            />
+            {state?.fieldErrors?.position && (
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.position}</p>
+            )}
           </div>
 
           <div>
             <label htmlFor="basePrice" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-            Base Price ($/month) <span className="text-[--color-error]">*</span>
-          </label>
-          <input
-            type="number"
-            id="basePrice"
-            name="basePrice"
-            required
-            min="0"
-            step="0.01"
-            value={values.basePrice}
-            onWheel={blurOnWheel}
-            onChange={(e) => setValues((v) => ({ ...v, basePrice: e.target.value }))}
-              className={inputClassName}
-          />
-          {state?.fieldErrors?.basePrice && (
-            <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.basePrice}</p>
-          )}
+              Base Price ($/month) <span className="text-[--color-error]">*</span>
+            </label>
+            <Input
+              type="number"
+              id="basePrice"
+              name="basePrice"
+              required
+              min="0"
+              step="0.01"
+              value={values.basePrice}
+              onWheel={blurOnWheel}
+              onChange={(e) => setValues((v) => ({ ...v, basePrice: e.target.value }))}
+            />
+            {state?.fieldErrors?.basePrice && (
+              <p className="mt-1 text-sm text-[--color-error]">{state.fieldErrors.basePrice}</p>
+            )}
           </div>
 
-          {isEdit && (
-            <div>
-              <input
-                type="hidden"
-                name="isAvailable"
-                value={values.isAvailable ? 'true' : 'false'}
-              />
-              <label className="flex min-h-[44px] items-center gap-3 rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5">
-                <input
-                  type="checkbox"
-                  checked={values.isAvailable}
-                  onChange={(e) => setValues((v) => ({ ...v, isAvailable: e.target.checked }))}
-                  className="h-4 w-4 rounded border-[--color-border] accent-[--color-primary] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary]"
-                />
-                <span className="text-sm font-medium text-[--color-foreground]">Available</span>
-              </label>
-              <p className="mt-1 text-xs text-[--color-muted]">
-                Note: booked placements can’t be edited (availability is controlled by bookings).
-              </p>
-            </div>
-          )}
+
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

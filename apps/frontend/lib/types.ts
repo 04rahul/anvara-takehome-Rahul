@@ -50,9 +50,9 @@ export interface AdSlot {
   basePrice: number;
   isAvailable: boolean;
   publisherId: string;
-  publisher?: { 
-    id: string; 
-    name: string; 
+  publisher?: {
+    id: string;
+    name: string;
     website?: string;
     category?: string;
     monthlyViews?: number;
@@ -71,6 +71,7 @@ export interface Placement {
   pricingModel?: 'CPM' | 'CPC' | 'CPA' | 'FLAT_RATE';
   startDate?: string;
   endDate?: string;
+  message?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
   campaignId: string;
   creativeId?: string;
@@ -78,15 +79,15 @@ export interface Placement {
   publisherId?: string;
   campaign?: { id: string; name: string };
   creative?: { id: string; name: string; type: string };
-  adSlot?: { 
-    id: string; 
-    name: string; 
+  adSlot?: {
+    id: string;
+    name: string;
     type: string;
     description?: string;
     basePrice?: number;
   };
-  publisher?: { 
-    id: string; 
+  publisher?: {
+    id: string;
     name: string;
     category?: string;
     website?: string;

@@ -58,9 +58,10 @@ export const DialogContent = React.forwardRef<
       />
       <DialogPrimitive.Content
         ref={ref}
+        style={{ backgroundColor: 'var(--color-dialog-surface)' }}
         className={cn(
           'fixed left-1/2 top-1/2 z-[calc(var(--z-dialog)+1)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2',
-          'rounded-lg border border-[--color-border] bg-[--color-dialog-surface] p-6 text-[--color-foreground]',
+          'rounded-lg border border-[--color-border] p-6 text-[--color-foreground]',
           'ring-1 ring-[--color-dialog-ring] shadow-[var(--shadow-lg)]',
           'focus-visible:outline-none',
           'data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95',
