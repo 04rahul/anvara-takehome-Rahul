@@ -43,7 +43,7 @@ export interface AuthRequest extends Request {
 export async function requireAuth(
   req: AuthRequest,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> {
   const traceId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const startMs = Date.now();
@@ -130,7 +130,7 @@ export async function requireAuth(
     console.log(`[requireAuth:${traceId}] success`, {
       dtMs: Date.now() - startMs,
       userId,
-      role
+      role,
     });
     next();
   } catch (error) {

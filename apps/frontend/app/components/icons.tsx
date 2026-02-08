@@ -180,6 +180,34 @@ export function DotIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
+export function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+            <path
+                d="M5 13l4 4L19 7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
+export function XIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+            <path
+                d="M6 18L18 6M6 6l12 12"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
 // Ad slot type color mappings
 export const typeColors: Record<string, string> = {
     DISPLAY: 'bg-blue-100 text-blue-700',

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getVariant, type ABTestConfig } from '@/lib/ab-test';
 import { trackVariantAssignment } from '@/lib/analytics';
+import { AB_TESTS } from '@/lib/ab-test-config';
 
 /**
  * React hook for A/B testing
@@ -120,15 +121,8 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
   return variant;
 }
 
-/**
- * Hook specifically for marketplace CTA style test
- * Provides type-safe variant values
- */
 export function useMarketplaceCtaTest(): 'solid' | 'outline' | null {
-  return useABTest('marketplace-cta-style', {
-    variants: ['solid', 'outline'],
-    weights: [50, 50],
-  }) as 'solid' | 'outline' | null;
+  return useABTest('marketplace-cta-style', AB_TESTS['marketplace-cta-style']) as 'solid' | 'outline' | null;
 }
 
 /**
@@ -136,10 +130,7 @@ export function useMarketplaceCtaTest(): 'solid' | 'outline' | null {
  * Provides type-safe variant values
  */
 export function useDetailPageLayoutTest(): 'traditional' | 'modern' | null {
-  return useABTest('detail-page-layout', {
-    variants: ['traditional', 'modern'],
-    weights: [50, 50],
-  }) as 'traditional' | 'modern' | null;
+  return useABTest('detail-page-layout', AB_TESTS['detail-page-layout']) as 'traditional' | 'modern' | null;
 }
 
 /**
@@ -147,8 +138,5 @@ export function useDetailPageLayoutTest(): 'traditional' | 'modern' | null {
  * Provides type-safe variant values
  */
 export function useMarketplaceFilterLayoutTest(): 'top' | 'sidebar' | null {
-  return useABTest('marketplace-filter-layout', {
-    variants: ['top', 'sidebar'],
-    weights: [50, 50],
-  }) as 'top' | 'sidebar' | null;
+  return useABTest('marketplace-filter-layout', AB_TESTS['marketplace-filter-layout']) as 'top' | 'sidebar' | null;
 }

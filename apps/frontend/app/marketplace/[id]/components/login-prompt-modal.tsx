@@ -10,7 +10,7 @@ interface LoginPromptModalProps {
 }
 
 export function LoginPromptModal({ open, onOpenChange }: LoginPromptModalProps) {
-    console.log('LoginPromptModal render', { open });
+    
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

@@ -21,7 +21,7 @@ export interface CampaignFormValues {
   cpcRate: string;
   startDate: string;
   endDate: string;
-  status?: string;
+  status?: string; // Kept for server->client hydration even if not in form input
   targetCategories: string;
   targetRegions: string;
 }
@@ -86,7 +86,8 @@ export async function createCampaignAction(
     if (!startDate) {
       fieldErrors.startDate = 'Start date is required';
     } else {
-      const start = new Date(startDate);
+      // Parse as local time to match startOfToday
+      const start = new Date(`${startDate}T00:00:00`);
       if (isNaN(start.getTime())) {
         fieldErrors.startDate = 'Start date must be a valid date';
       } else if (start < today) {
@@ -97,7 +98,8 @@ export async function createCampaignAction(
     if (!endDate) {
       fieldErrors.endDate = 'End date is required';
     } else {
-      const end = new Date(endDate);
+      // Parse as local time to match startOfToday
+      const end = new Date(`${endDate}T00:00:00`);
       if (isNaN(end.getTime())) {
         fieldErrors.endDate = 'End date must be a valid date';
       } else if (end < today) {
@@ -107,8 +109,8 @@ export async function createCampaignAction(
 
     // Validate date relationship
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = new Date(`${startDate}T00:00:00`);
+      const end = new Date(`${endDate}T00:00:00`);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start >= end) {
         fieldErrors.endDate = 'End date must be after start date';
       }
@@ -239,7 +241,8 @@ export async function updateCampaignAction(
     const cpcRate = values.cpcRate === '' ? null : values.cpcRate;
     const startDate = values.startDate === '' ? null : values.startDate;
     const endDate = values.endDate === '' ? null : values.endDate;
-    const status = values.status ?? null;
+    // const status = values.status ?? null; // Removed handling of raw status
+    const isPaused = formData.get('isPaused') === 'true'; // Checkbox value
     const targetCategories = values.targetCategories === '' ? null : values.targetCategories;
     const targetRegions = values.targetRegions === '' ? null : values.targetRegions;
 
@@ -267,7 +270,8 @@ export async function updateCampaignAction(
     }
 
     if (startDate) {
-      const start = new Date(startDate);
+      // Parse as local time to match startOfToday
+      const start = new Date(`${startDate}T00:00:00`);
       if (isNaN(start.getTime())) {
         fieldErrors.startDate = 'Start date must be a valid date';
       } else if (start < today) {
@@ -276,7 +280,8 @@ export async function updateCampaignAction(
     }
 
     if (endDate) {
-      const end = new Date(endDate);
+      // Parse as local time to match startOfToday
+      const end = new Date(`${endDate}T00:00:00`);
       if (isNaN(end.getTime())) {
         fieldErrors.endDate = 'End date must be a valid date';
       } else if (end < today) {
@@ -286,8 +291,8 @@ export async function updateCampaignAction(
 
     // Validate date relationship
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = new Date(`${startDate}T00:00:00`);
+      const end = new Date(`${endDate}T00:00:00`);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start >= end) {
         fieldErrors.endDate = 'End date must be after start date';
       }
@@ -331,9 +336,10 @@ export async function updateCampaignAction(
       data.endDate = new Date(endDate).toISOString();
     }
 
-    if (status) {
-      data.status = status;
-    }
+    // Handle Pause/Resume logic
+    // If Checked (isPaused=true) -> Send 'PAUSED'
+    // If Unchecked -> Send 'ACTIVE' (Backend will recalculate DRAFT/ACTIVE/COMPLETED based on dates)
+    data.status = isPaused ? 'PAUSED' : 'ACTIVE';
 
     if (targetCategories !== null) {
       if (targetCategories) {

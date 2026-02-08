@@ -298,24 +298,22 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
           </div>
 
           {isEdit && (
-            <div>
-              <label htmlFor="status" className="mb-2 block text-sm font-medium text-[--color-foreground]">
-                Status
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPaused"
+                name="isPaused"
+                value="true"
+                checked={values.status === 'PAUSED'}
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  setValues((v) => ({ ...v, status: isChecked ? 'PAUSED' : 'ACTIVE' }));
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-[--color-primary] focus:ring-[--color-primary]"
+              />
+              <label htmlFor="isPaused" className="text-sm font-medium text-[--color-foreground]">
+                Pause Campaign
               </label>
-              <Select
-                id="status"
-                name="status"
-                value={values.status}
-                onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))}
-              >
-                <option value="DRAFT">Draft</option>
-                <option value="ACTIVE">Active</option>
-                <option value="PAUSED">Paused</option>
-                <option value="COMPLETED">Completed</option>
-              </Select>
-              {state?.fieldErrors?.status && (
-                <p className="mt-1 text-sm text-[var(--color-error)]">{state.fieldErrors.status}</p>
-              )}
             </div>
           )}
 

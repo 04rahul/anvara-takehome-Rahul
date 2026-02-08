@@ -6,14 +6,11 @@ import routes from './routes/index.js';
 const app: Application = express();
 const PORT = process.env.BACKEND_PORT || 4291;
 
-
-
 const allowedOrigins = new Set(
-  (process.env.FRONTEND_URL ??
-    'http://localhost:3847')
+  (process.env.FRONTEND_URL ?? 'http://localhost:3847')
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean),
+    .filter(Boolean)
 );
 
 app.use(
@@ -31,7 +28,7 @@ app.use(
     credentials: true, // needed for cookies/auth headers
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
+  })
 );
 
 // Rate limiting (basic abuse protection). Tune limits as needed.
@@ -42,9 +39,8 @@ app.use(
     limit: 300, // per IP, per window
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-  }),
+  })
 );
-
 
 app.use(express.json());
 

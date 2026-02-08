@@ -90,13 +90,15 @@ function setMockSponsorAuth() {
     req.user = mockSponsorUser;
     next();
   });
-  (roleMiddleware as any).mockImplementation((roles: string[]) => (req: AuthRequest, res: any, next: any) => {
-    if (req.user && roles.includes(req.user.role || '')) {
-      next();
-    } else {
-      res.status(403).json({ error: 'Insufficient permissions' });
+  (roleMiddleware as any).mockImplementation(
+    (roles: string[]) => (req: AuthRequest, res: any, next: any) => {
+      if (req.user && roles.includes(req.user.role || '')) {
+        next();
+      } else {
+        res.status(403).json({ error: 'Insufficient permissions' });
+      }
     }
-  });
+  );
 }
 
 function setMockPublisherAuth() {
@@ -104,13 +106,15 @@ function setMockPublisherAuth() {
     req.user = mockPublisherUser;
     next();
   });
-  (roleMiddleware as any).mockImplementation((roles: string[]) => (req: AuthRequest, res: any, next: any) => {
-    if (req.user && roles.includes(req.user.role || '')) {
-      next();
-    } else {
-      res.status(403).json({ error: 'Insufficient permissions' });
+  (roleMiddleware as any).mockImplementation(
+    (roles: string[]) => (req: AuthRequest, res: any, next: any) => {
+      if (req.user && roles.includes(req.user.role || '')) {
+        next();
+      } else {
+        res.status(403).json({ error: 'Insufficient permissions' });
+      }
     }
-  });
+  );
 }
 
 function setMockUnauthenticated() {
@@ -358,9 +362,7 @@ describe('API Routes', () => {
     });
 
     it('should return 400 for missing required fields', async () => {
-      const response = await request(app)
-        .post('/api/sponsors')
-        .send({ name: 'New Sponsor' }); // Missing email
+      const response = await request(app).post('/api/sponsors').send({ name: 'New Sponsor' }); // Missing email
 
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
@@ -442,14 +444,12 @@ describe('API Routes', () => {
       const newCampaign = createMockCampaign();
       vi.mocked(prisma.campaign.create).mockResolvedValue(newCampaign as any);
 
-      const response = await request(app)
-        .post('/api/campaigns')
-        .send({
-          name: 'New Campaign',
-          budget: 1000,
-          startDate: '2025-01-01',
-          endDate: '2025-12-31',
-        });
+      const response = await request(app).post('/api/campaigns').send({
+        name: 'New Campaign',
+        budget: 1000,
+        startDate: '2025-01-01',
+        endDate: '2025-12-31',
+      });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
@@ -544,13 +544,11 @@ describe('API Routes', () => {
       const newAdSlot = createMockAdSlot();
       vi.mocked(prisma.adSlot.create).mockResolvedValue(newAdSlot as any);
 
-      const response = await request(app)
-        .post('/api/ad-slots')
-        .send({
-          name: 'New Ad Slot',
-          type: 'DISPLAY',
-          basePrice: 100,
-        });
+      const response = await request(app).post('/api/ad-slots').send({
+        name: 'New Ad Slot',
+        type: 'DISPLAY',
+        basePrice: 100,
+      });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
@@ -566,22 +564,29 @@ describe('API Routes', () => {
         publisher: createMockPublisher(),
       };
       vi.mocked(prisma.adSlot.findUnique).mockResolvedValue(mockAdSlot as any);
-      vi.mocked(prisma.campaign.findUnique).mockResolvedValue({ id: 'campaign1', sponsorId: 'sponsor1', name: 'Test Campaign' } as any);
-      vi.mocked(prisma.creative.findUnique).mockResolvedValue({ id: 'creative1', campaignId: 'campaign1', name: 'Test Creative', type: 'BANNER' } as any);
+      vi.mocked(prisma.campaign.findUnique).mockResolvedValue({
+        id: 'campaign1',
+        sponsorId: 'sponsor1',
+        name: 'Test Campaign',
+      } as any);
+      vi.mocked(prisma.creative.findUnique).mockResolvedValue({
+        id: 'creative1',
+        campaignId: 'campaign1',
+        name: 'Test Creative',
+        type: 'BANNER',
+      } as any);
       const newPlacement = createMockPlacement();
       vi.mocked(prisma.placement.create).mockResolvedValue(newPlacement as any);
 
-      const response = await request(app)
-        .post('/api/ad-slots/adslot1/book')
-        .send({
-          campaignId: 'campaign1',
-          creativeId: 'creative1',
-          agreedPrice: 100,
-          pricingModel: 'CPM',
-          startDate: '2026-02-01',
-          endDate: '2026-03-01',
-          message: 'Hello',
-        });
+      const response = await request(app).post('/api/ad-slots/adslot1/book').send({
+        campaignId: 'campaign1',
+        creativeId: 'creative1',
+        agreedPrice: 100,
+        pricingModel: 'CPM',
+        startDate: '2026-02-01',
+        endDate: '2026-03-01',
+        message: 'Hello',
+      });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('success', true);
@@ -668,7 +673,9 @@ describe('API Routes', () => {
       const mockPlacements = [createMockPlacement()];
       vi.mocked(prisma.placement.findMany).mockResolvedValue(mockPlacements as any);
 
-      const response = await request(app).get('/api/placements?campaignId=campaign1&status=PENDING');
+      const response = await request(app).get(
+        '/api/placements?campaignId=campaign1&status=PENDING'
+      );
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -680,18 +687,20 @@ describe('API Routes', () => {
       setMockSponsorAuth();
       const newPlacement = createMockPlacement();
       vi.mocked(prisma.placement.create).mockResolvedValue(newPlacement as any);
-      vi.mocked(prisma.adSlot.findUnique).mockResolvedValue({ id: 'adslot1', publisherId: 'publisher1', isAvailable: true } as any);
+      vi.mocked(prisma.adSlot.findUnique).mockResolvedValue({
+        id: 'adslot1',
+        publisherId: 'publisher1',
+        isAvailable: true,
+      } as any);
 
-      const response = await request(app)
-        .post('/api/placements')
-        .send({
-          campaignId: 'campaign1',
-          creativeId: 'creative1',
-          adSlotId: 'adslot1',
-          agreedPrice: 100,
-          startDate: '2025-01-01',
-          endDate: '2025-12-31',
-        });
+      const response = await request(app).post('/api/placements').send({
+        campaignId: 'campaign1',
+        creativeId: 'creative1',
+        adSlotId: 'adslot1',
+        agreedPrice: 100,
+        startDate: '2025-01-01',
+        endDate: '2025-12-31',
+      });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
@@ -713,10 +722,20 @@ describe('API Routes', () => {
         adSlot: { id: 'adslot1', isAvailable: true },
       } as any);
 
-      vi.mocked(prisma.adSlot.update).mockResolvedValue({ ...createMockAdSlot(), id: 'adslot1', isAvailable: false } as any);
-      vi.mocked(prisma.placement.update).mockResolvedValue({ ...createMockPlacement(), id: 'placement1', status: 'APPROVED' } as any);
+      vi.mocked(prisma.adSlot.update).mockResolvedValue({
+        ...createMockAdSlot(),
+        id: 'adslot1',
+        isAvailable: false,
+      } as any);
+      vi.mocked(prisma.placement.update).mockResolvedValue({
+        ...createMockPlacement(),
+        id: 'placement1',
+        status: 'APPROVED',
+      } as any);
 
-      const response = await request(app).patch('/api/placements/placement1').send({ status: 'APPROVED' });
+      const response = await request(app)
+        .patch('/api/placements/placement1')
+        .send({ status: 'APPROVED' });
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('status', 'APPROVED');
@@ -737,9 +756,15 @@ describe('API Routes', () => {
         adSlot: { id: 'adslot1', isAvailable: true },
       } as any);
 
-      vi.mocked(prisma.placement.update).mockResolvedValue({ ...createMockPlacement(), id: 'placement1', status: 'REJECTED' } as any);
+      vi.mocked(prisma.placement.update).mockResolvedValue({
+        ...createMockPlacement(),
+        id: 'placement1',
+        status: 'REJECTED',
+      } as any);
 
-      const response = await request(app).patch('/api/placements/placement1').send({ status: 'REJECTED' });
+      const response = await request(app)
+        .patch('/api/placements/placement1')
+        .send({ status: 'REJECTED' });
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('status', 'REJECTED');

@@ -466,6 +466,239 @@ async function main() {
       publisherId: startupBlog.id,
       isAvailable: false, // Already booked
     },
+    // More Dev Blog Daily slots (Demo Publisher)
+    {
+      name: 'Tech Trends Header',
+      description: 'Exclusive header placement on our Tech Trends section.',
+      type: 'DISPLAY',
+      position: 'header',
+      width: 728,
+      height: 90,
+      basePrice: 600,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Review Section Sidebar',
+      description: 'High engagement sidebar in product reviews.',
+      type: 'DISPLAY',
+      position: 'sidebar',
+      width: 300,
+      height: 250,
+      basePrice: 350,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Community Forum Footer',
+      description: 'Footer banner on our active community forum.',
+      type: 'DISPLAY',
+      position: 'footer',
+      width: 728,
+      height: 90,
+      basePrice: 200,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Article Mid-Content 1',
+      description: 'Native ad placement in the middle of long-form articles.',
+      type: 'DISPLAY',
+      position: 'in-content',
+      width: 600,
+      height: 400,
+      basePrice: 500,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Article Mid-Content 2',
+      description: 'Second native ad placement in the middle of long-form articles.',
+      type: 'DISPLAY',
+      position: 'in-content',
+      width: 600,
+      height: 400,
+      basePrice: 450,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Homepage Spotlight',
+      description: 'Featured spot on the homepage for maximum visibility.',
+      type: 'DISPLAY',
+      position: 'homepage-spotlight',
+      width: 970,
+      height: 250,
+      basePrice: 1200,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Newsletter Signup Widget',
+      description: 'Sponsorship of the newsletter signup widget on the blog.',
+      type: 'DISPLAY',
+      position: 'widget',
+      width: 300,
+      height: 100,
+      basePrice: 250,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Mobile Sticky Footer',
+      description: 'Sticky footer ad shown only on mobile devices.',
+      type: 'DISPLAY',
+      position: 'mobile-footer',
+      width: 320,
+      height: 50,
+      basePrice: 400,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Category Page Banner',
+      description: 'Top banner on specific category pages (e.g., AI, Web Dev).',
+      type: 'DISPLAY',
+      position: 'category-header',
+      width: 728,
+      height: 90,
+      basePrice: 300,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Sponsored Link Block',
+      description: 'A block of sponsored links at the end of articles.',
+      type: 'DISPLAY',
+      position: 'link-block',
+      width: 600,
+      height: 150,
+      basePrice: 150,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+
+    // More Podcast Show slots
+    {
+      name: 'Episode Intro Shoutout',
+      description: 'Quick 15-second shoutout at the very start of the episode.',
+      type: 'PODCAST',
+      position: 'intro',
+      basePrice: 800,
+      publisherId: podcastShow.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Show Notes Link',
+      description: 'Prominent link in the show notes with a short description.',
+      type: 'PODCAST',
+      position: 'show-notes',
+      basePrice: 200,
+      publisherId: podcastShow.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Guest Interview Sponsor',
+      description: 'Sponsorship of a specific guest interview segment.',
+      type: 'PODCAST',
+      position: 'segment',
+      basePrice: 1200,
+      publisherId: podcastShow.id,
+      isAvailable: true,
+    },
+
+    // More Newsletter slots
+    {
+      name: 'Sponsor Spotlight',
+      description: 'A dedicated section highlighting a sponsor in the middle of the newsletter.',
+      type: 'NEWSLETTER',
+      position: 'spotlight',
+      basePrice: 600,
+      publisherId: newsletterPub.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Weekly Deal',
+      description: 'Feature your special offer in our "Deals of the Week" section.',
+      type: 'NEWSLETTER',
+      position: 'deal',
+      basePrice: 300,
+      publisherId: newsletterPub.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Header Logo',
+      description: 'Your logo next to our newsletter header.',
+      type: 'NEWSLETTER',
+      position: 'header-logo',
+      basePrice: 400,
+      publisherId: newsletterPub.id,
+      isAvailable: true,
+    },
+
+    // More Video Channel slots
+    {
+      name: 'Community Tab Post',
+      description: 'A sponsored post on our YouTube Community tab.',
+      type: 'VIDEO',
+      position: 'community-post',
+      basePrice: 500,
+      publisherId: videoChannel.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Live Stream Banner',
+      description: 'Banner overlay during our weekly live streams.',
+      type: 'VIDEO',
+      position: 'livestream-overlay',
+      basePrice: 1000,
+      publisherId: videoChannel.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Pinned Comment',
+      description: 'Pinned comment at the top of the comment section for a video.',
+      type: 'VIDEO',
+      position: 'pinned-comment',
+      basePrice: 300,
+      publisherId: videoChannel.id,
+      isAvailable: true,
+    },
+
+    // More Startup Insider slots
+    {
+      name: 'Sidebar Rectangle',
+      description: 'Standard medium rectangle ad in the sidebar.',
+      type: 'DISPLAY',
+      position: 'sidebar',
+      width: 300,
+      height: 250,
+      basePrice: 400,
+      publisherId: startupBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Exit Intent Popup',
+      description: 'Popup shown when user intends to leave the site.',
+      type: 'DISPLAY',
+      position: 'popup',
+      width: 500,
+      height: 400,
+      basePrice: 800,
+      publisherId: startupBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'In-Feed Native Ad',
+      description: 'Ad that looks like a normal post in the article feed.',
+      type: 'DISPLAY',
+      position: 'feed',
+      width: 600,
+      height: 150,
+      basePrice: 550,
+      publisherId: startupBlog.id,
+      isAvailable: true,
+    },
   ];
 
   for (const slot of adSlots) {
@@ -594,8 +827,95 @@ async function main() {
     },
   });
 
+  // More creatives for testing
+  await prisma.creative.create({
+    data: {
+      name: 'Q1 Launch Video Teaser',
+      type: 'VIDEO',
+      assetUrl: 'https://example.com/videos/q1-launch-teaser.mp4',
+      clickUrl: 'https://acme.com/launch',
+      altText: 'Coming Soon: Q1 Launch',
+      isApproved: true,
+      isActive: true,
+      campaignId: q1Launch.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'Q1 Launch Mobile Banner',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/320x50/png',
+      clickUrl: 'https://acme.com/launch',
+      altText: 'Acme Q1 Launch (Mobile)',
+      width: 320,
+      height: 50,
+      isApproved: true,
+      isActive: true,
+      campaignId: q1Launch.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'Brand Manifesto Video',
+      type: 'VIDEO',
+      assetUrl: 'https://example.com/videos/brand-manifesto.mp4',
+      clickUrl: 'https://techstartup.io/about',
+      altText: 'Our Story',
+      isApproved: true,
+      isActive: true,
+      campaignId: brandAwareness.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'Logo Square',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/250x250/png',
+      clickUrl: 'https://techstartup.io',
+      altText: 'TechStartup Logo',
+      width: 250,
+      height: 250,
+      isApproved: true,
+      isActive: true,
+      campaignId: brandAwareness.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'Dev Tools Webinar Invite',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/300x250/png?text=Webinar',
+      clickUrl: 'https://acme.com/webinar',
+      altText: 'Join our Dev Tools Webinar',
+      width: 300,
+      height: 250,
+      isApproved: true,
+      isActive: true,
+      campaignId: q2Outreach.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'API Documentation Link',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/728x90/png?text=Read+Docs',
+      clickUrl: 'https://acme.com/docs',
+      altText: 'Read the API Docs',
+      width: 728,
+      height: 90,
+      isApproved: true,
+      isActive: true,
+      campaignId: q2Outreach.id,
+    },
+  });
+
   console.log('\nPrisma seed completed!');
-  console.log('  Created: 2 sponsors, 5 publishers, 20 ad slots, 2 campaigns, 2 creatives');
+  console.log('  Created: 2 sponsors, 5 publishers, ~50 ad slots, 2 campaigns, ~10 creatives');
 
   console.log('\n✅ All seeding complete!');
 }

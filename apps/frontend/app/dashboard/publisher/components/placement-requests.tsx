@@ -5,6 +5,8 @@ import type { Placement } from '@/lib/types';
 import { Alert } from '@/app/components/ui/alert';
 import { Button } from '@/app/components/ui/button';
 import { approvePlacementAction, rejectPlacementAction } from '../actions';
+import { CheckIcon, XIcon } from '@/app/components/icons';
+import { cn } from '@/lib/utils';
 
 function formatDateRange(start?: string, end?: string): string {
   if (!start || !end) return '—';
@@ -14,22 +16,25 @@ function formatDateRange(start?: string, end?: string): string {
   return `${s.toLocaleDateString()} → ${e.toLocaleDateString()}`;
 }
 
+const actionButtonClassName =
+  'inline-flex h-9 w-9 items-center justify-center rounded-full border border-[--color-border] bg-[--color-background] text-[--color-foreground] transition-all duration-200 hover:bg-[--color-surface-hover] hover:border-[--color-primary-light] hover:shadow-[var(--shadow-sm)] active:bg-[--color-surface-pressed] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-primary] p-0';
+
 function ApproveButton() {
   const { pending } = useFormStatus();
   return (
     <Button
       type="submit"
+      variant="ghost"
       size="sm"
       isLoading={pending}
       disabled={pending}
-      className="h-9 w-9 p-0 bg-green-600 hover:bg-green-700 text-white"
+      className={cn(
+        actionButtonClassName,
+        "text-green-600 hover:text-green-700 hover:border-green-300 hover:bg-green-50 focus-visible:ring-green-500"
+      )}
       title="Approve"
     >
-      {!pending && (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      )}
+      {!pending && <CheckIcon className="h-5 w-5" />}
     </Button>
   );
 }
@@ -39,18 +44,17 @@ function RejectButton() {
   return (
     <Button
       type="submit"
-      variant="outline"
+      variant="ghost"
       size="sm"
       isLoading={pending}
       disabled={pending}
-      className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+      className={cn(
+        actionButtonClassName,
+        "text-red-600 hover:text-red-700 hover:border-red-300 hover:bg-red-50 focus-visible:ring-red-500"
+      )}
       title="Reject"
     >
-      {!pending && (
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      )}
+      {!pending && <XIcon className="h-5 w-5" />}
     </Button>
   );
 }
@@ -178,8 +182,8 @@ export function PlacementRequests({
           {/* Message Row (if exists) */}
           {p.message && (
             <div className="col-span-full mt-3 pt-3 border-t border-[--color-border]">
-              <div className="text-xs text-[--color-foreground] leading-relaxed bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2 border border-blue-200 dark:border-blue-800">
-                <span className="font-semibold">Message:</span> {p.message}
+              <div className="text-xs text-[--color-foreground] leading-relaxed bg-[--color-surface-hover] rounded-lg p-3 border border-[--color-border]">
+                <span className="font-semibold text-[--color-foreground]">Message:</span> {p.message}
               </div>
             </div>
           )}

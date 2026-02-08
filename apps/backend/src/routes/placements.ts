@@ -34,7 +34,11 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     if (status) {
       const candidate = String(status) as PlacementStatus;
       if (!Object.values(PlacementStatus).includes(candidate)) {
-        res.status(400).json({ error: `Invalid status. Must be one of: ${Object.values(PlacementStatus).join(', ')}` });
+        res
+          .status(400)
+          .json({
+            error: `Invalid status. Must be one of: ${Object.values(PlacementStatus).join(', ')}`,
+          });
         return;
       }
       whereClause.status = candidate;
@@ -47,8 +51,8 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
           select: {
             id: true,
             name: true,
-            sponsor: { select: { id: true, name: true, logo: true } }
-          }
+            sponsor: { select: { id: true, name: true, logo: true } },
+          },
         },
         creative: { select: { id: true, name: true, type: true } },
         adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
@@ -65,189 +69,202 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/placements - Create new placement (sponsor only; prefer using /api/ad-slots/:id/book)
-router.post('/', requireAuth, roleMiddleware(['SPONSOR']), async (req: AuthRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
+router.post(
+  '/',
+  requireAuth,
+  roleMiddleware(['SPONSOR']),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
+      }
 
-    const {
-      campaignId,
-      creativeId,
-      adSlotId,
-      agreedPrice,
-      pricingModel,
-      startDate,
-      endDate,
-      message,
-    } = req.body;
-
-    if (!campaignId || !creativeId || !adSlotId || !agreedPrice || !startDate || !endDate) {
-      res.status(400).json({
-        error: 'campaignId, creativeId, adSlotId, agreedPrice, startDate, and endDate are required',
-      });
-      return;
-    }
-
-    // Derive publisherId from adSlot (do not trust client input)
-    const adSlot = await prisma.adSlot.findUnique({
-      where: { id: String(adSlotId) },
-      select: { id: true, publisherId: true, isAvailable: true },
-    });
-
-    if (!adSlot) {
-      res.status(404).json({ error: 'Ad slot not found' });
-      return;
-    }
-
-    const placement = await prisma.placement.create({
-      data: {
+      const {
         campaignId,
         creativeId,
         adSlotId,
-        publisherId: adSlot.publisherId,
         agreedPrice,
-        pricingModel: pricingModel || 'CPM',
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        pricingModel,
+        startDate,
+        endDate,
         message,
-      },
-      include: {
-        campaign: { select: { name: true } },
-        publisher: { select: { name: true } },
-      },
-    });
+      } = req.body;
 
-    res.status(201).json(placement);
-  } catch (error) {
-    console.error('Error creating placement:', error);
-    res.status(500).json({ error: 'Failed to create placement' });
-  }
-});
+      if (!campaignId || !creativeId || !adSlotId || !agreedPrice || !startDate || !endDate) {
+        res.status(400).json({
+          error:
+            'campaignId, creativeId, adSlotId, agreedPrice, startDate, and endDate are required',
+        });
+        return;
+      }
 
-// PATCH /api/placements/:id - Publisher approves or rejects a placement request
-router.patch('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: AuthRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
+      // Derive publisherId from adSlot (do not trust client input)
+      const adSlot = await prisma.adSlot.findUnique({
+        where: { id: String(adSlotId) },
+        select: { id: true, publisherId: true, isAvailable: true },
+      });
 
-    const id = getParam(req.params.id);
-    if (!id) {
-      res.status(400).json({ error: 'Invalid placement id' });
-      return;
-    }
+      if (!adSlot) {
+        res.status(404).json({ error: 'Ad slot not found' });
+        return;
+      }
 
-    const { status } = req.body as { status?: unknown };
-    const desiredStatus = String(status || '').toUpperCase();
-    if (!['APPROVED', 'REJECTED'].includes(desiredStatus)) {
-      res.status(400).json({ error: 'status must be APPROVED or REJECTED' });
-      return;
-    }
-
-    const updated = await prisma.$transaction(async (tx) => {
-      const placement = await tx.placement.findUnique({
-        where: { id },
+      const placement = await prisma.placement.create({
+        data: {
+          campaignId,
+          creativeId,
+          adSlotId,
+          publisherId: adSlot.publisherId,
+          agreedPrice,
+          pricingModel: pricingModel || 'CPM',
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          message,
+        },
         include: {
-          adSlot: { select: { id: true, isAvailable: true, basePrice: true } },
-          campaign: { select: { id: true, startDate: true, endDate: true } },
+          campaign: { select: { name: true } },
+          publisher: { select: { name: true } },
         },
       });
 
-      if (!placement) {
-        return null;
+      res.status(201).json(placement);
+    } catch (error) {
+      console.error('Error creating placement:', error);
+      res.status(500).json({ error: 'Failed to create placement' });
+    }
+  }
+);
+
+// PATCH /api/placements/:id - Publisher approves or rejects a placement request
+router.patch(
+  '/:id',
+  requireAuth,
+  roleMiddleware(['PUBLISHER']),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
       }
 
-      if (placement.publisherId !== req.user!.publisherId) {
-        // Hide existence details from other publishers
-        throw Object.assign(new Error('Not found'), { statusCode: 404 });
+      const id = getParam(req.params.id);
+      if (!id) {
+        res.status(400).json({ error: 'Invalid placement id' });
+        return;
       }
 
-      if (placement.status !== 'PENDING') {
-        throw Object.assign(new Error('Only PENDING requests can be updated'), { statusCode: 409 });
+      const { status } = req.body as { status?: unknown };
+      const desiredStatus = String(status || '').toUpperCase();
+      if (!['APPROVED', 'REJECTED'].includes(desiredStatus)) {
+        res.status(400).json({ error: 'status must be APPROVED or REJECTED' });
+        return;
       }
 
-      if (desiredStatus === 'APPROVED') {
-        if (!placement.adSlot.isAvailable) {
-          throw Object.assign(new Error('Ad slot is already booked'), { statusCode: 409 });
-        }
-
-        // Calculate spent amount based on adSlot basePrice and duration
-        // basePrice is per month, so calculate months between startDate and endDate
-        const start = new Date(placement.startDate);
-        const end = new Date(placement.endDate);
-        const monthsDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30); // Average days per month
-        const amountToAdd = Number(placement.adSlot.basePrice) * monthsDiff;
-
-        // Lock inventory on approval and update campaign spent
-        await tx.adSlot.update({
-          where: { id: placement.adSlotId },
-          data: { isAvailable: false },
-        });
-
-        // Update campaign spent
-        await tx.campaign.update({
-          where: { id: placement.campaignId },
-          data: {
-            spent: {
-              increment: amountToAdd,
-            },
+      const updated = await prisma.$transaction(async (tx) => {
+        const placement = await tx.placement.findUnique({
+          where: { id },
+          include: {
+            adSlot: { select: { id: true, isAvailable: true, basePrice: true } },
+            campaign: { select: { id: true, startDate: true, endDate: true } },
           },
         });
 
+        if (!placement) {
+          return null;
+        }
+
+        if (placement.publisherId !== req.user!.publisherId) {
+          // Hide existence details from other publishers
+          throw Object.assign(new Error('Not found'), { statusCode: 404 });
+        }
+
+        if (placement.status !== 'PENDING') {
+          throw Object.assign(new Error('Only PENDING requests can be updated'), {
+            statusCode: 409,
+          });
+        }
+
+        if (desiredStatus === 'APPROVED') {
+          if (!placement.adSlot.isAvailable) {
+            throw Object.assign(new Error('Ad slot is already booked'), { statusCode: 409 });
+          }
+
+          // Calculate spent amount based on adSlot basePrice and duration
+          // basePrice is per month, so calculate months between startDate and endDate
+          const start = new Date(placement.startDate);
+          const end = new Date(placement.endDate);
+          const monthsDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30); // Average days per month
+          const amountToAdd = Number(placement.adSlot.basePrice) * monthsDiff;
+
+          // Lock inventory on approval and update campaign spent
+          await tx.adSlot.update({
+            where: { id: placement.adSlotId },
+            data: { isAvailable: false },
+          });
+
+          // Update campaign spent
+          await tx.campaign.update({
+            where: { id: placement.campaignId },
+            data: {
+              spent: {
+                increment: amountToAdd,
+              },
+            },
+          });
+
+          return tx.placement.update({
+            where: { id },
+            data: { status: 'APPROVED' },
+            include: {
+              campaign: {
+                select: {
+                  id: true,
+                  name: true,
+                  sponsor: { select: { id: true, name: true, logo: true } },
+                }
+              },
+              creative: { select: { id: true, name: true, type: true } },
+              adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
+              publisher: { select: { id: true, name: true } },
+            },
+          });
+        }
+
         return tx.placement.update({
           where: { id },
-          data: { status: 'APPROVED' },
+          data: { status: 'REJECTED' },
           include: {
             campaign: {
               select: {
                 id: true,
                 name: true,
-                sponsor: { select: { id: true, name: true, logo: true } }
-              }
+                sponsor: { select: { id: true, name: true, logo: true } },
+              },
             },
             creative: { select: { id: true, name: true, type: true } },
             adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
             publisher: { select: { id: true, name: true } },
           },
         });
+      });
+
+      if (!updated) {
+        res.status(404).json({ error: 'Placement not found' });
+        return;
       }
 
-      return tx.placement.update({
-        where: { id },
-        data: { status: 'REJECTED' },
-        include: {
-          campaign: {
-            select: {
-              id: true,
-              name: true,
-              sponsor: { select: { id: true, name: true, logo: true } }
-            }
-          },
-          creative: { select: { id: true, name: true, type: true } },
-          adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
-          publisher: { select: { id: true, name: true } },
-        },
-      });
-    });
-
-    if (!updated) {
-      res.status(404).json({ error: 'Placement not found' });
-      return;
+      res.json(updated);
+    } catch (error: any) {
+      const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
+      if (statusCode !== 500) {
+        res.status(statusCode).json({ error: error.message });
+        return;
+      }
+      console.error('Error updating placement:', error);
+      res.status(500).json({ error: 'Failed to update placement' });
     }
-
-    res.json(updated);
-  } catch (error: any) {
-    const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
-    if (statusCode !== 500) {
-      res.status(statusCode).json({ error: error.message });
-      return;
-    }
-    console.error('Error updating placement:', error);
-    res.status(500).json({ error: 'Failed to update placement' });
   }
-});
+);
 
 export default router;

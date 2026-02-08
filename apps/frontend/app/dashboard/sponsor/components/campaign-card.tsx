@@ -1,5 +1,17 @@
 'use client';
 
+function formatDateUTC(dateString: string) {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  // Use UTC methods to ensure we render the date as stored, avoiding timezone shifts
+  return d.toLocaleDateString('en-US', {
+    timeZone: 'UTC',
+    month: 'numeric',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
 import * as React from 'react';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -146,8 +158,8 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
 
           <div className="inline-flex items-center gap-1 text-xs text-[--color-muted]">
             <CalendarIcon className="h-3.5 w-3.5" />
-            {new Date(campaign.startDate).toLocaleDateString()} -{' '}
-            {new Date(campaign.endDate).toLocaleDateString()}
+            {formatDateUTC(campaign.startDate)} -{' '}
+            {formatDateUTC(campaign.endDate)}
           </div>
         </Link>
       </div>
