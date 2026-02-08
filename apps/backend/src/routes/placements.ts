@@ -43,9 +43,15 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     const placements = await prisma.placement.findMany({
       where: whereClause,
       include: {
-        campaign: { select: { id: true, name: true } },
+        campaign: {
+          select: {
+            id: true,
+            name: true,
+            sponsor: { select: { id: true, name: true, logo: true } }
+          }
+        },
         creative: { select: { id: true, name: true, type: true } },
-        adSlot: { select: { id: true, name: true, type: true } },
+        adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
         publisher: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -195,9 +201,15 @@ router.patch('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: Aut
           where: { id },
           data: { status: 'APPROVED' },
           include: {
-            campaign: { select: { id: true, name: true } },
+            campaign: {
+              select: {
+                id: true,
+                name: true,
+                sponsor: { select: { id: true, name: true, logo: true } }
+              }
+            },
             creative: { select: { id: true, name: true, type: true } },
-            adSlot: { select: { id: true, name: true, type: true } },
+            adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
             publisher: { select: { id: true, name: true } },
           },
         });
@@ -207,9 +219,15 @@ router.patch('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: Aut
         where: { id },
         data: { status: 'REJECTED' },
         include: {
-          campaign: { select: { id: true, name: true } },
+          campaign: {
+            select: {
+              id: true,
+              name: true,
+              sponsor: { select: { id: true, name: true, logo: true } }
+            }
+          },
           creative: { select: { id: true, name: true, type: true } },
-          adSlot: { select: { id: true, name: true, type: true } },
+          adSlot: { select: { id: true, name: true, type: true, basePrice: true } },
           publisher: { select: { id: true, name: true } },
         },
       });

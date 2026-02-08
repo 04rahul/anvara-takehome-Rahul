@@ -73,8 +73,9 @@ export async function requestPlacementAction(
       return { fieldErrors, values };
     }
 
-    // Calculate total agreed price (base price + pricing model value)
-    const agreedPrice = Number(values.basePrice) + Number(values.pricingModelValue);
+    // agreedPrice now stores only the additional amount (pricing model value)
+    // The total will be calculated as basePrice + agreedPrice when needed
+    const agreedPrice = Number(values.pricingModelValue);
 
     await api<{ success: boolean; message?: string }>(`/api/ad-slots/${values.adSlotId}/book`, {
       method: 'POST',

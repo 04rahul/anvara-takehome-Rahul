@@ -77,7 +77,11 @@ export interface Placement {
   creativeId?: string;
   adSlotId: string;
   publisherId?: string;
-  campaign?: { id: string; name: string };
+  campaign?: {
+    id: string;
+    name: string;
+    sponsor?: { id: string; name: string; logo?: string };
+  };
   creative?: { id: string; name: string; type: string };
   adSlot?: {
     id: string;

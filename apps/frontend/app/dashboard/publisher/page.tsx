@@ -50,21 +50,23 @@ export default async function PublisherDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Create Ad Slot Button at Top */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Publisher Dashboard</h1>
+        <CreateAdSlotButton />
+      </div>
+
       {(pendingPlacements.length > 0 || placementsError) && (
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Placement requests</h1>
-          </div>
+          <h2 className="text-xl font-semibold">Placement requests</h2>
           <PlacementRequests placements={pendingPlacements} error={placementsError} />
         </section>
       )}
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Ad Slots</h1>
-        <CreateAdSlotButton />
-      </div>
-
-      <AdSlotList adSlots={adSlots} error={error} />
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">My Ad Slots</h2>
+        <AdSlotList adSlots={adSlots} error={error} />
+      </section>
     </div>
   );
 }

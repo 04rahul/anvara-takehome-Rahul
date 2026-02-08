@@ -232,15 +232,31 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
                         <div className="flex flex-col">
                           <span className="text-xs text-[--color-muted]">Pricing</span>
                           <div className="flex items-center gap-2">
-                            {placement.agreedPrice !== undefined ? (
+                            {placement.adSlot?.basePrice !== undefined ? (
+                              <>
+                                {placement.agreedPrice !== undefined && Number(placement.agreedPrice) > 0 ? (
+                                  <>
+                                    <span className="font-medium">
+                                      {formatCurrency(placement.adSlot.basePrice)} + {formatCurrency(placement.agreedPrice)}
+                                    </span>
+                                    {placement.pricingModel && (
+                                      <span className="text-[--color-muted]">(Base + {placement.pricingModel})</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="font-medium">{formatCurrency(placement.adSlot.basePrice)}</span>
+                                    <span className="text-[--color-muted] font-normal">(Base only)</span>
+                                  </>
+                                )}
+                              </>
+                            ) : placement.agreedPrice !== undefined ? (
                               <>
                                 <span className="font-medium">{formatCurrency(placement.agreedPrice)}</span>
                                 {placement.pricingModel && (
                                   <span className="text-[--color-muted]">({placement.pricingModel})</span>
                                 )}
                               </>
-                            ) : placement.adSlot?.basePrice !== undefined ? (
-                              <span className="font-medium">{formatCurrency(placement.adSlot.basePrice)} <span className="text-[--color-muted] font-normal">(Base)</span></span>
                             ) : null}
                           </div>
                         </div>
