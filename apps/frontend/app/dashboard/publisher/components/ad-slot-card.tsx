@@ -18,139 +18,19 @@ import {
   DialogTitle,
 } from '@/app/components/ui/dialog';
 import { toast } from '@/app/components/ui/toast';
+import {
+  ArrowUpRightIcon,
+  PencilIcon,
+  TrashIcon,
+  TagIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  typeColors,
+} from '@/app/components/icons';
 
 interface AdSlotCardProps {
   adSlot: AdSlot;
 }
-
-function ArrowUpRightIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M7 17 17 7M10 7h7v7"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function PencilIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M12 20h9"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function TrashIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M3 6h18"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M6 6l1 16a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-16"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10 11v6M14 11v6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function TagIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M20.59 13.41 12 22 2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7 7h.01"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CheckCircleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="m8 12 2.5 2.5L16 9"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function XCircleIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M22 12A10 10 0 1 1 12 2a10 10 0 0 1 10 10Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="m15 9-6 6M9 9l6 6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-const typeColors: Record<string, string> = {
-  DISPLAY: 'bg-blue-100 text-blue-700',
-  VIDEO: 'bg-red-100 text-red-700',
-  NEWSLETTER: 'bg-purple-100 text-purple-700',
-  PODCAST: 'bg-orange-100 text-orange-700',
-};
 
 export function AdSlotCard({ adSlot }: AdSlotCardProps) {
   const availabilityLabel = adSlot.isAvailable ? 'Available' : 'Booked';
@@ -172,19 +52,20 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
   // Close delete modal on success
   useEffect(() => {
     if (deleteState?.success) {
-      // Small delay before showing toast and refreshing
-      setTimeout(() => {
+      const successKey = 'delete-success';
+      if (lastDeleteToastKeyRef.current !== successKey) {
+        lastDeleteToastKeyRef.current = successKey;
         toast({
           title: 'Ad slot deleted',
           description: 'The ad slot was removed.',
           variant: 'success',
         });
+      }
+      // Delay refresh to ensure toast renders before component unmounts
+      setTimeout(() => {
         router.refresh();
-        // Delay closing the modal to let the toast mount before the component unmounts
-        setTimeout(() => {
-          setIsDeleteOpen(false);
-        }, 800);
-      }, 300);
+        setIsDeleteOpen(false);
+      }, 150);
     }
   }, [deleteState?.success, router]);
 

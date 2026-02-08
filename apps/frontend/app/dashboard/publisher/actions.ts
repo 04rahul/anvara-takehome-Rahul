@@ -13,7 +13,6 @@ export interface AdSlotFormState {
 
 export interface AdSlotFormValues {
   id?: string;
-  currentIsAvailable?: string;
   name: string;
   description: string;
   type: string;
@@ -139,7 +138,6 @@ export async function updateAdSlotAction(
   try {
     const values: AdSlotFormValues = {
       id: (formData.get('id') as string) ?? '',
-      currentIsAvailable: (formData.get('currentIsAvailable') as string | null) ?? '',
       name: (formData.get('name') as string) ?? '',
       description: (formData.get('description') as string | null) ?? '',
       type: (formData.get('type') as string) ?? 'DISPLAY',
@@ -162,7 +160,6 @@ export async function updateAdSlotAction(
 
     // Extract form data
     const id = values.id ?? '';
-    const currentIsAvailable = values.currentIsAvailable || null;
     const name = values.name;
     const description = values.description || null;
     const type = values.type;
@@ -255,7 +252,6 @@ export async function updateAdSlotAction(
       error: error instanceof Error ? error.message : 'Failed to update ad slot',
       values: {
         id: (formData.get('id') as string) ?? '',
-        currentIsAvailable: (formData.get('currentIsAvailable') as string | null) ?? '',
         name: (formData.get('name') as string) ?? '',
         description: (formData.get('description') as string | null) ?? '',
         type: (formData.get('type') as string) ?? 'DISPLAY',
@@ -305,7 +301,8 @@ export async function deleteAdSlotAction(
     // Call backend API
     await deleteAdSlot(id, cookieHeader);
 
-    // Revalidate the dashboard page - moved to client side to show toast
+    // Don't use revalidatePath here - it causes immediate component unmount
+    // Use router.refresh() in client component for timing control to show toast
     // revalidatePath('/dashboard/publisher');
 
     return { success: true };

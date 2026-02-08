@@ -1,10 +1,4 @@
-// Simple API client
-// FIXME: This client has no error response parsing - when API returns { error: "..." },
-// we should extract and throw that message instead of generic "API request failed"
-
-// TODO: Add authentication token to requests
-// Hint: Include credentials: 'include' for cookie-based auth, or
-// add Authorization header for token-based auth
+// Simple API client with error handling and cookie-based authentication
 
 import type { Campaign, AdSlot, Placement } from './types';
 

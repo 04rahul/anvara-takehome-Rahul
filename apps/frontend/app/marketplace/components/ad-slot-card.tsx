@@ -7,13 +7,7 @@ import type { AdSlot } from '@/lib/types';
 import { useMarketplaceCtaTest } from '@/hooks/use-ab-test';
 import { Button } from '@/app/components/ui/button';
 import { BookingRequestModal } from '../[id]/components/booking-request-modal';
-
-const typeColors: Record<string, string> = {
-  DISPLAY: 'bg-blue-100 text-blue-700',
-  VIDEO: 'bg-red-100 text-red-700',
-  NEWSLETTER: 'bg-purple-100 text-purple-700',
-  PODCAST: 'bg-orange-100 text-orange-700',
-};
+import { typeColors } from '@/app/components/icons';
 
 function formatViews(views: number): string {
   if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;

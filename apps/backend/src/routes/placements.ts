@@ -172,7 +172,7 @@ router.patch('/:id', requireAuth, roleMiddleware(['PUBLISHER']), async (req: Aut
         // basePrice is per month, so calculate months between startDate and endDate
         const start = new Date(placement.startDate);
         const end = new Date(placement.endDate);
-        const monthsDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30.44); // Average days per month
+        const monthsDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30); // Average days per month
         const amountToAdd = Number(placement.adSlot.basePrice) * monthsDiff;
 
         // Lock inventory on approval and update campaign spent
