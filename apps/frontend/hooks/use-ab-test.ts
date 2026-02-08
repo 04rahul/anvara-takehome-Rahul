@@ -35,27 +35,29 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
         const key = 'dbg_ab_useABTest_marketplace-filter-layout_v1';
         if (!sessionStorage.getItem(key)) {
           // #region agent log H3/H4
-          fetch('http://127.0.0.1:7242/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sessionId: 'debug-session',
-              runId: 'pre-fix',
-              hypothesisId: 'H3',
-              location: 'hooks/use-ab-test.ts:useABTest[effect]',
-              message: 'useABTest effect running for marketplace-filter-layout',
-              data: {
-                testId,
-                variants: config.variants,
-                weights: config.weights,
-                cookieEnabled: typeof navigator !== 'undefined' ? navigator.cookieEnabled : null,
-                hasAbCookie: typeof document !== 'undefined'
-                  ? document.cookie.split(';').some((c) => c.trim().startsWith('ab_test_marketplace-filter-layout='))
-                  : null,
-              },
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {});
+          if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
+            fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: 'debug-session',
+                runId: 'pre-fix',
+                hypothesisId: 'H3',
+                location: 'hooks/use-ab-test.ts:useABTest[effect]',
+                message: 'useABTest effect running for marketplace-filter-layout',
+                data: {
+                  testId,
+                  variants: config.variants,
+                  weights: config.weights,
+                  cookieEnabled: typeof navigator !== 'undefined' ? navigator.cookieEnabled : null,
+                  hasAbCookie: typeof document !== 'undefined'
+                    ? document.cookie.split(';').some((c) => c.trim().startsWith('ab_test_marketplace-filter-layout='))
+                    : null,
+                },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => { });
+          }
           // #endregion agent log H3/H4
           sessionStorage.setItem(key, 'true');
         }
@@ -73,25 +75,27 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
         const key = 'dbg_ab_useABTest_marketplace-filter-layout_assigned_v1';
         if (!sessionStorage.getItem(key)) {
           // #region agent log H3/H4
-          fetch('http://127.0.0.1:7242/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sessionId: 'debug-session',
-              runId: 'pre-fix',
-              hypothesisId: 'H4',
-              location: 'hooks/use-ab-test.ts:useABTest[assigned]',
-              message: 'Assigned variant for marketplace-filter-layout',
-              data: {
-                testId,
-                assignedVariant,
-                cookieNowHasAbCookie: typeof document !== 'undefined'
-                  ? document.cookie.split(';').some((c) => c.trim().startsWith('ab_test_marketplace-filter-layout='))
-                  : null,
-              },
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {});
+          if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
+            fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: 'debug-session',
+                runId: 'pre-fix',
+                hypothesisId: 'H4',
+                location: 'hooks/use-ab-test.ts:useABTest[assigned]',
+                message: 'Assigned variant for marketplace-filter-layout',
+                data: {
+                  testId,
+                  assignedVariant,
+                  cookieNowHasAbCookie: typeof document !== 'undefined'
+                    ? document.cookie.split(';').some((c) => c.trim().startsWith('ab_test_marketplace-filter-layout='))
+                    : null,
+                },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => { });
+          }
           // #endregion agent log H3/H4
           sessionStorage.setItem(key, 'true');
         }
@@ -104,7 +108,7 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
     if (assignedVariant && !tracked) {
       const trackingKey = `ab_tracked_${testId}`;
       const alreadyTracked = sessionStorage.getItem(trackingKey);
-      
+
       if (!alreadyTracked) {
         trackVariantAssignment(testId, assignedVariant);
         sessionStorage.setItem(trackingKey, 'true');

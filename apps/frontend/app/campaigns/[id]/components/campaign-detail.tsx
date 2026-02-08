@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { Campaign, Placement } from '@/lib/types';
 import { Alert } from '@/app/components/ui/alert';
@@ -24,6 +25,14 @@ const placementStatusColors: Record<string, string> = {
   REJECTED: 'bg-red-100 text-red-700',
 };
 
+const adSlotTypeColors: Record<string, string> = {
+  DISPLAY: 'bg-purple-100 text-purple-700',
+  VIDEO: 'bg-red-100 text-red-700',
+  BANNER: 'bg-blue-100 text-blue-700',
+  NATIVE: 'bg-green-100 text-green-700',
+  AUDIO: 'bg-orange-100 text-orange-700',
+};
+
 interface CampaignDetailProps {
   campaign: Campaign;
 }
@@ -41,9 +50,37 @@ function formatDate(dateString: string): string {
 }
 
 export function CampaignDetail({ campaign }: CampaignDetailProps) {
+  const [selectedStatus, setSelectedStatus] = useState<string>('All');
+
   const progress = campaign.budget > 0 ? (Number(campaign.spent) / Number(campaign.budget)) * 100 : 0;
   const placements = campaign.placements || [];
   const creatives = campaign.creatives || [];
+
+  // Get unique statuses from placements
+  const availableStatuses = ['All', ...Array.from(new Set(placements.map(p => p.status)))];
+
+  // Filter placements based on selected status
+  const filteredPlacements = selectedStatus === 'All'
+    ? placements
+    : placements.filter(p => p.status === selectedStatus);
+
+  // Sort placements: ACTIVE first, then APPROVED, then others
+  const sortedPlacements = [...filteredPlacements].sort((a, b) => {
+    const statusPriority: Record<string, number> = {
+      'ACTIVE': 1,
+      'APPROVED': 2,
+    };
+
+    const aPriority = statusPriority[a.status] || 999;
+    const bPriority = statusPriority[b.status] || 999;
+
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+
+    // If same priority, maintain original order or sort alphabetically by status
+    return a.status.localeCompare(b.status);
+  });
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
@@ -173,16 +210,38 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
 
       {/* Placements Section */}
       <section className="rounded-lg border border-[--color-border] bg-[--color-background] p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">
-          Placements ({placements.length})
-        </h2>
-        {placements.length === 0 ? (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <h2 className="text-lg font-semibold">
+            Placements ({filteredPlacements.length}{placements.length !== filteredPlacements.length ? ` of ${placements.length}` : ''})
+          </h2>
+
+          {/* Status Filter */}
+          {placements.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {availableStatuses.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setSelectedStatus(status)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${selectedStatus === status
+                    ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md hover:bg-blue-700 dark:hover:bg-blue-600'
+                    : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600'
+                    }`}
+                >
+                  {status} ({status === 'All' ? placements.length : placements.filter(p => p.status === status).length})
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {sortedPlacements.length === 0 ? (
           <div className="rounded-lg border border-dashed border-[--color-border] p-8 text-center text-[--color-muted]">
-            No placements yet. Request placements from the marketplace to get started.
+            {selectedStatus === 'All'
+              ? 'No placements yet. Request placements from the marketplace to get started.'
+              : `No ${selectedStatus} placements found.`}
           </div>
         ) : (
           <div className="space-y-4">
-            {placements.map((placement: Placement) => (
+            {sortedPlacements.map((placement: Placement) => (
               <div
                 key={placement.id}
                 className="group rounded-lg border border-[--color-border] bg-[--color-background] p-5 shadow-sm transition-all hover:shadow-md"
@@ -198,7 +257,7 @@ export function CampaignDetail({ campaign }: CampaignDetailProps) {
                             {placement.adSlot?.name || 'Unknown Ad Slot'}
                           </h3>
                           {placement.adSlot?.type && (
-                            <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-[--color-muted] ring-1 ring-inset ring-gray-500/10">
+                            <span className={`rounded px-2 py-0.5 text-xs font-medium ${adSlotTypeColors[placement.adSlot.type] || 'bg-gray-100 text-gray-700'}`}>
                               {placement.adSlot.type}
                             </span>
                           )}

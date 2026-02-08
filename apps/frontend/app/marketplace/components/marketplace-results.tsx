@@ -39,29 +39,34 @@ export function MarketplaceResults({
   try {
     const key = 'dbg_marketplace_results_layout_v1';
     if (!sessionStorage.getItem(key)) {
-      fetch('http://127.0.0.1:7242/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'debug-session',
-          runId: 'pre-fix',
-          hypothesisId: 'H3',
-          location: 'app/marketplace/components/marketplace-results.tsx:MarketplaceResults',
-          message: 'MarketplaceResults computed filter layout from AB test variant',
-          data: {
-            pathname: typeof window !== 'undefined' ? window.location.pathname : 'server',
-            variant,
-            layout,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
+        fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: 'debug-session',
+            runId: 'pre-fix',
+            hypothesisId: 'H3',
+            location: 'app/marketplace/components/marketplace-results.tsx:MarketplaceResults',
+            message: 'MarketplaceResults computed filter layout from AB test variant',
+            data: {
+              pathname: typeof window !== 'undefined' ? window.location.pathname : 'server',
+              variant,
+              layout,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => { });
+      }
       sessionStorage.setItem(key, 'true');
     }
   } catch {
     // ignore instrumentation errors
   }
   // #endregion agent log H3
+
+  // Check if any filters are active
+  const hasActiveFilters = Object.values(currentParams).some((value) => value !== undefined && value !== '');
 
   const filter = (
     <FilterControls
@@ -73,7 +78,11 @@ export function MarketplaceResults({
 
   const results = (
     <div className="space-y-6">
-      <AdSlotGrid adSlots={adSlots} error={error} />
+      <AdSlotGrid
+        adSlots={adSlots}
+        error={error}
+        hasActiveFilters={hasActiveFilters}
+      />
       {!error && pagination && (
         <ServerPagination
           currentPage={pagination.currentPage}

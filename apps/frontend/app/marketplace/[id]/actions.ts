@@ -93,8 +93,23 @@ export async function requestPlacementAction(
 
     return { success: true };
   } catch (error) {
+    let errorMessage = 'Failed to request placement';
+
+    // Check if it's an ApiError with error code
+    if (error && typeof error === 'object' && 'errorCode' in error) {
+      const apiError = error as { message: string; errorCode?: string; metadata?: Record<string, unknown> };
+
+      if (apiError.errorCode === 'DUPLICATE_PLACEMENT_REQUEST') {
+        errorMessage = 'You have already requested this placement. Check your campaign details for the request status.';
+      } else {
+        errorMessage = apiError.message;
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
     return {
-      error: error instanceof Error ? error.message : 'Failed to request placement',
+      error: errorMessage,
       values,
     };
   }

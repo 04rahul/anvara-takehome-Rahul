@@ -7,6 +7,7 @@ import type { AdSlot } from '@/lib/types';
 import { useMarketplaceCtaTest } from '@/hooks/use-ab-test';
 import { Button } from '@/app/components/ui/button';
 import { BookingRequestModal } from '../[id]/components/booking-request-modal';
+import { LoginPromptModal } from '../[id]/components/login-prompt-modal';
 import { typeColors } from '@/app/components/icons';
 
 function formatViews(views: number): string {
@@ -22,22 +23,31 @@ interface AdSlotCardProps {
 export function AdSlotCard({ slot }: AdSlotCardProps) {
   const session = useSession();
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
 
   // A/B Test: Button style variant
   const buttonVariant = useMarketplaceCtaTest();
 
   const isSponsor = Boolean(session.roleData?.sponsorId) || session.role === 'sponsor';
   const showBookButton = !session.user || isSponsor;
-  const canBook = showBookButton && slot.isAvailable;
+  const canBook = showBookButton && slot.isAvailable && !requestSubmitted;
 
   const handleBookNowClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!session.user) {
-      // Guest users - could redirect to login or show a message
-      // For now, just prevent action (they can click through to detail page)
+
+    // Don't open modal if request already submitted
+    if (requestSubmitted) {
       return;
     }
+
+    if (!session.user) {
+      // Guest users - show login modal
+      setShowLoginModal(true);
+      return;
+    }
+
     if (isSponsor && session.roleData?.sponsorId) {
       setShowBookingModal(true);
     }
@@ -99,6 +109,13 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
           </Button>
         )}
 
+        {/* Request Sent State */}
+        {requestSubmitted && slot.isAvailable && (
+          <Button variant="secondary" size="lg" className="mt-3 w-full" disabled>
+            Request Sent ✓
+          </Button>
+        )}
+
         {!slot.isAvailable && showBookButton ? (
           <Button variant="secondary" size="lg" className="mt-3 w-full" disabled>
             Booked
@@ -112,11 +129,14 @@ export function AdSlotCard({ slot }: AdSlotCardProps) {
           open={showBookingModal}
           onOpenChange={setShowBookingModal}
           onSuccess={() => {
+            setRequestSubmitted(true);
             setShowBookingModal(false);
           }}
           sponsorId={session.roleData.sponsorId}
         />
       )}
+
+      <LoginPromptModal open={showLoginModal} onOpenChange={setShowLoginModal} />
     </>
   );
 }

@@ -300,6 +300,36 @@ router.post('/:id/book', requireAuth, roleMiddleware(['SPONSOR']), async (req: A
       return;
     }
 
+    // Check for existing placement request for this campaign + ad slot
+    const existingPlacement = await prisma.placement.findFirst({
+      where: {
+        campaignId: campaign.id,
+        adSlotId: adSlot.id,
+        status: {
+          in: ['PENDING', 'APPROVED', 'ACTIVE']
+        }
+      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true
+      }
+    });
+
+    if (existingPlacement) {
+      const statusMessage = existingPlacement.status === 'PENDING'
+        ? 'You already have a pending placement request for this ad slot.'
+        : `This ad slot is already ${existingPlacement.status.toLowerCase()} for this campaign.`;
+
+      res.status(409).json({
+        error: statusMessage,
+        errorCode: 'DUPLICATE_PLACEMENT_REQUEST',
+        existingPlacementId: existingPlacement.id,
+        existingPlacementStatus: existingPlacement.status
+      });
+      return;
+    }
+
     // Validate pricing model
     let resolvedPricingModel: PricingModel = PricingModel.CPM;
     if (pricingModel !== undefined && pricingModel !== null && String(pricingModel).trim().length > 0) {

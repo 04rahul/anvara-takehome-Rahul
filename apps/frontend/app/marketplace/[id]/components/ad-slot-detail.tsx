@@ -12,6 +12,7 @@ import { Button } from '@/app/components/ui/button';
 import { ButtonLink } from '@/app/components/ui/button-link';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { BookingRequestModal } from './booking-request-modal';
+import { LoginPromptModal } from './login-prompt-modal';
 import { typeColors } from '@/app/components/icons';
 
 function formatViews(views: number): string {
@@ -95,6 +96,7 @@ export function AdSlotDetail({ id }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [unbooking, setUnbooking] = useState(false); // Added unbooking state
   const router = useRouter(); // Added router
 
@@ -259,6 +261,7 @@ export function AdSlotDetail({ id }: Props) {
                         variant="outline"
                         size="sm"
                         onClick={handleUnbook}
+                        isLoading={unbooking}
                         disabled={unbooking}
                         className="w-full border-blue-300 text-blue-900 hover:bg-blue-100 hover:border-blue-400"
                       >
@@ -293,9 +296,15 @@ export function AdSlotDetail({ id }: Props) {
                           Send request
                         </Button>
                       ) : (
-                        <ButtonLink href="/login" className="w-full">
+                        <Button
+                          onClick={() => {
+                            console.log('Login button clicked');
+                            setShowLoginModal(true);
+                          }}
+                          className="w-full"
+                        >
                           Log in to request
-                        </ButtonLink>
+                        </Button>
                       )}
                       <p className="text-center text-sm text-[--color-muted]">
                         {user
@@ -376,6 +385,8 @@ export function AdSlotDetail({ id }: Props) {
           sponsorId={roleInfo.sponsorId}
         />
       )}
+
+      <LoginPromptModal open={showLoginModal} onOpenChange={setShowLoginModal} />
     </div>
   );
 }

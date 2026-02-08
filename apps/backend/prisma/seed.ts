@@ -288,6 +288,28 @@ async function main() {
       publisherId: devBlog.id,
       isAvailable: true,
     },
+    {
+      name: 'Sticky Footer Banner',
+      description: 'High visibility sticky footer that stays with the user as they scroll.',
+      type: 'DISPLAY',
+      position: 'footer-sticky',
+      width: 728,
+      height: 90,
+      basePrice: 600,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
+    {
+      name: 'Article Top Leaderboard',
+      description: 'Premium placement immediately before article content begins.',
+      type: 'DISPLAY',
+      position: 'article-top',
+      width: 728,
+      height: 90,
+      basePrice: 700,
+      publisherId: devBlog.id,
+      isAvailable: true,
+    },
     // Code Talk Podcast slots
     {
       name: 'Pre-roll Spot (60s)',
@@ -481,6 +503,21 @@ async function main() {
     },
   });
 
+  const q2Outreach = await prisma.campaign.create({
+    data: {
+      name: 'Q2 Developer Outreach',
+      description: 'Focusing on developer tools and API adoption',
+      budget: 15000,
+      spent: 1200,
+      startDate: new Date('2026-04-01'),
+      endDate: new Date('2026-06-30'),
+      status: 'ACTIVE',
+      targetCategories: ['Technology', 'Development'],
+      targetRegions: ['US', 'CA', 'UK'],
+      sponsorId: acme.id,
+    },
+  });
+
   // Create creatives (needed for placement request flow)
   await prisma.creative.create({
     data: {
@@ -509,6 +546,51 @@ async function main() {
       isApproved: true,
       isActive: true,
       campaignId: brandAwareness.id,
+    },
+  });
+
+  // More creatives for Q1 Launch
+  await prisma.creative.create({
+    data: {
+      name: 'Q1 Launch Sidebar',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/300x250/png',
+      clickUrl: 'https://acme.com/launch',
+      altText: 'Acme Q1 Launch Details',
+      width: 300,
+      height: 250,
+      isApproved: true,
+      isActive: true,
+      campaignId: q1Launch.id,
+    },
+  });
+
+  // Creatives for Q2 Outreach
+  await prisma.creative.create({
+    data: {
+      name: 'Dev Tools Banner',
+      type: 'BANNER',
+      assetUrl: 'https://placehold.co/728x90/333/FFF/png?text=Dev+Tools',
+      clickUrl: 'https://acme.com/developers',
+      altText: 'Build faster with Acme',
+      width: 728,
+      height: 90,
+      isApproved: true,
+      isActive: true,
+      campaignId: q2Outreach.id,
+    },
+  });
+
+  await prisma.creative.create({
+    data: {
+      name: 'API Promo Video',
+      type: 'VIDEO',
+      assetUrl: 'https://example.com/videos/api-promo.mp4',
+      clickUrl: 'https://acme.com/api',
+      altText: 'See what you can build',
+      isApproved: true,
+      isActive: true,
+      campaignId: q2Outreach.id,
     },
   });
 

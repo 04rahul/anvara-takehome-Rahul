@@ -65,12 +65,12 @@ export default async function Home() {
         <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-gradient-to-br from-violet-400/25 via-fuchsia-400/25 to-pink-400/25 blur-3xl animate-pulse-slow" />
       </div>
 
-      <div className="space-y-20 py-10 md:py-16">
+      <div className="space-y-12 py-8 md:py-12">
         {/* Hero Section */}
         <section className="relative">
           <div className="text-center space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-lg animate-fade-in">
+            <div className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 px-4 py-2 text-sm font-semibold text-blue-700 dark:text-blue-300 shadow-lg animate-fade-in">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
@@ -79,17 +79,17 @@ export default async function Home() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight animate-slide-up">
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
-                Sponsorships that feel
-              </span>
-              <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-red-600">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight animate-slide-up text-[--color-foreground]/80">
+              Sponsorships that feel
+              <span className="block mt-2 text-[--color-primary]">
                 as easy as shopping online
               </span>
             </h1>
 
             {/* Subheadline */}
-            <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-600 leading-relaxed animate-fade-in-delayed">
+            {/* Subheadline */}
+            {/* Subheadline */}
+            <p className="max-w-2xl mx-auto text-lg md:text-xl text-[--color-muted] leading-relaxed animate-fade-in-delayed font-medium">
               Discover premium ad slots, compare pricing transparently, and book with confidence.
               Publishers get clean inventory management and fewer back-and-forth emails.
             </p>
@@ -113,7 +113,7 @@ export default async function Home() {
                 href="/login"
                 variant="secondary"
                 size="lg"
-                className="backdrop-blur-sm bg-white/80 border-2 border-gray-200 hover:border-blue-300 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-all duration-300 shadow-lg"
               >
                 Login
               </ButtonLink>
@@ -123,47 +123,47 @@ export default async function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mt-12 animate-fade-in-delayed-3">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                <div className="relative bg-[var(--color-card)]/90 dark:bg-[var(--color-card)]/90 backdrop-blur-sm rounded-xl p-5 border border-[var(--color-card-border)] shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                     {totalSlots}+
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Ad Slots</div>
+                  <div className="text-xs font-medium text-[var(--color-card-muted)] mt-1">Ad Slots</div>
                 </div>
               </div>
 
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                <div className="relative bg-[var(--color-card)]/90 dark:bg-[var(--color-card)]/90 backdrop-blur-sm rounded-xl p-5 border border-[var(--color-card-border)] shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
                     {availableSlots}
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Available Now</div>
+                  <div className="text-xs font-medium text-[var(--color-card-muted)] mt-1">Available Now</div>
                 </div>
               </div>
 
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-pink-400 to-red-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-red-600">
+                <div className="relative bg-[var(--color-card)]/90 dark:bg-[var(--color-card)]/90 backdrop-blur-sm rounded-xl p-5 border border-[var(--color-card-border)] shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-red-600">
                     Fast
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Approval Flow</div>
+                  <div className="text-xs font-medium text-[var(--color-card-muted)] mt-1">Approval Flow</div>
                 </div>
               </div>
 
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+                <div className="relative bg-[var(--color-card)]/90 dark:bg-[var(--color-card)]/90 backdrop-blur-sm rounded-xl p-5 border border-[var(--color-card-border)] shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
+                  <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
                     100%
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Transparent</div>
+                  <div className="text-xs font-medium text-[var(--color-card-muted)] mt-1">Transparent</div>
                 </div>
               </div>
             </div>
 
             {/* Feature Highlights */}
-            <ul className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto mt-8 text-sm text-gray-600">
+            <ul className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto mt-8 text-sm text-[--color-muted] font-medium">
               {[
                 'Pricing upfront',
                 'Quick booking',
@@ -183,10 +183,10 @@ export default async function Home() {
         {featuredSlots.length > 0 && (
           <section className="space-y-6">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">
+              <h2 className="text-3xl font-bold text-[--color-foreground]">
                 Featured Opportunities
               </h2>
-              <p className="mt-2 text-gray-600">Premium ad slots available right now</p>
+              <p className="mt-2 text-[--color-muted] font-medium">Premium ad slots available right now</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
@@ -198,7 +198,8 @@ export default async function Home() {
                   style={{ animationDelay: `${i * 150}ms` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-2xl blur opacity-0 group-hover:opacity-25 transition-opacity duration-300"></div>
-                  <div className="relative bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:border-blue-300">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-2xl blur opacity-0 group-hover:opacity-25 transition-opacity duration-300"></div>
+                  <div className="relative bg-[var(--color-card)] dark:bg-[var(--color-card)] rounded-xl border border-[var(--color-card-border)] p-5 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-blue-300 dark:hover:border-blue-500">
                     {slot.isAvailable && (
                       <div className="absolute top-4 right-4">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 py-1 text-xs font-bold text-white shadow-md">
@@ -208,15 +209,15 @@ export default async function Home() {
                       </div>
                     )}
 
-                    <div className="mb-4">
-                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <div className="mb-3">
+                      <div className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider mb-1">
                         {slot.type}
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 line-clamp-1">
+                      <h3 className="text-lg font-bold text-[var(--color-card-foreground)] line-clamp-1">
                         {slot.name}
                       </h3>
                       {slot.publisher && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-xs text-[var(--color-card-muted)] mt-0.5">
                           by {slot.publisher.name}
                         </p>
                       )}
@@ -224,12 +225,12 @@ export default async function Home() {
 
                     <div className="flex items-end justify-between">
                       <div>
-                        <div className="text-xs text-gray-500">Starting at</div>
+                        <div className="text-xs text-[var(--color-card-muted)]">Starting at</div>
                         <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                           ${slot.basePrice.toLocaleString()}
                         </div>
                       </div>
-                      <div className="text-blue-600 group-hover:translate-x-1 transition-transform">
+                      <div className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
                         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
@@ -245,10 +246,10 @@ export default async function Home() {
         {/* Features Bento Grid */}
         <section className="space-y-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">
+            <h2 className="text-3xl font-bold text-[--color-foreground]">
               Everything you need
             </h2>
-            <p className="mt-2 text-gray-600">Built for modern sponsorship workflows</p>
+            <p className="mt-2 text-[--color-muted] font-medium">Built for modern sponsorship workflows</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -296,10 +297,11 @@ export default async function Home() {
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-300`}></div>
-                <div className="relative bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:border-blue-300">
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{feature.desc}</p>
+                <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-300`}></div>
+                <div className="relative bg-[var(--color-card)] dark:bg-[var(--color-card)] rounded-xl border border-[var(--color-card-border)] p-5 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-blue-300 dark:hover:border-blue-500">
+                  <div className="text-3xl mb-3">{feature.icon}</div>
+                  <h3 className="text-lg font-bold text-[var(--color-card-foreground)] mb-1">{feature.title}</h3>
+                  <p className="text-[var(--color-card-muted)] text-sm leading-relaxed">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -308,13 +310,13 @@ export default async function Home() {
 
         {/* How It Works */}
         <section className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-3xl -z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl -z-10"></div>
           <div className="p-10 md:p-16 space-y-10">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">
+              <h2 className="text-3xl font-bold text-white">
                 How it works
               </h2>
-              <p className="mt-2 text-gray-600">Simple workflow for sponsors and publishers</p>
+              <p className="mt-2 text-blue-100">Simple workflow for sponsors and publishers</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -341,17 +343,17 @@ export default async function Home() {
                 <div key={i} className="relative animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
                   <div className="text-center space-y-4">
                     <div className="relative inline-flex">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur opacity-40"></div>
-                      <div className="relative bg-white rounded-full w-20 h-20 flex items-center justify-center border-4 border-blue-200 shadow-xl">
+                      <div className="absolute inset-0 bg-white/30 rounded-full blur opacity-60"></div>
+                      <div className="relative bg-white dark:bg-slate-800 rounded-full w-20 h-20 flex items-center justify-center border-4 border-white/50 shadow-xl">
                         <span className="text-3xl">{step.icon}</span>
                       </div>
                     </div>
-                    <div className="text-sm font-bold text-blue-600">STEP {step.step}</div>
-                    <h3 className="text-xl font-bold text-gray-900">{step.title}</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">{step.desc}</p>
+                    <div className="text-sm font-bold text-white">STEP {step.step}</div>
+                    <h3 className="text-xl font-bold text-white">{step.title}</h3>
+                    <p className="text-blue-100 text-sm leading-relaxed">{step.desc}</p>
                   </div>
                   {i < 2 && (
-                    <div className="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gradient-to-r from-blue-300 to-purple-300 -translate-x-1/2"></div>
+                    <div className="hidden md:block absolute top-10 left-full w-full h-0.5 bg-white/30 -translate-x-1/2"></div>
                   )}
                 </div>
               ))}
@@ -391,21 +393,21 @@ export default async function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t-2 border-gray-200 pt-10">
+        <footer className="border-t-2 border-[--color-border] pt-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="text-2xl font-bold text-[--color-primary] mb-2">
                 Anvara
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[--color-muted]">
                 © {new Date().getFullYear()} Sponsorship marketplace demo
               </div>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
-              <Link className="text-gray-600 hover:text-blue-600 transition-colors font-medium" href="/marketplace">
+              <Link className="text-[--color-muted] hover:text-[--color-primary] transition-colors font-medium" href="/marketplace">
                 Marketplace
               </Link>
-              <Link className="text-gray-600 hover:text-blue-600 transition-colors font-medium" href="/login">
+              <Link className="text-[--color-muted] hover:text-[--color-primary] transition-colors font-medium" href="/login">
                 Login
               </Link>
             </div>

@@ -9,6 +9,21 @@ interface Stats {
 }
 
 /**
+ * Custom API error that preserves error code and metadata from backend
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public errorCode?: string,
+    public metadata?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/**
  * API client that works in both client-side and server-side contexts.
  * For server-side usage, pass cookies via the cookieHeader parameter.
  */
@@ -33,14 +48,25 @@ export async function api<T>(
 
     if (!res.ok) {
       let errorMessage = 'API request failed';
+      let errorCode: string | undefined;
+      let metadata: Record<string, unknown> | undefined;
+
       try {
         const errorData = await res.json();
         errorMessage = errorData.error || errorData.message || errorMessage;
+        errorCode = errorData.errorCode;
+
+        // Extract metadata (everything except error and errorCode)
+        const { error, message, errorCode: _, ...rest } = errorData;
+        if (Object.keys(rest).length > 0) {
+          metadata = rest;
+        }
       } catch {
         // If response is not JSON, use status text
         errorMessage = res.statusText || errorMessage;
       }
-      throw new Error(errorMessage);
+
+      throw new ApiError(errorMessage, res.status, errorCode, metadata);
     }
     return res.json();
   } catch (error) {

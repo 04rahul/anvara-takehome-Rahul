@@ -1,5 +1,9 @@
+'use client';
+
+import { useFormStatus } from 'react-dom';
 import type { Placement } from '@/lib/types';
 import { Alert } from '@/app/components/ui/alert';
+import { Button } from '@/app/components/ui/button';
 import { approvePlacementAction, rejectPlacementAction } from '../actions';
 
 function formatDateRange(start?: string, end?: string): string {
@@ -9,6 +13,48 @@ function formatDateRange(start?: string, end?: string): string {
   if (isNaN(s.getTime()) || isNaN(e.getTime())) return '—';
   return `${s.toLocaleDateString()} → ${e.toLocaleDateString()}`;
 }
+
+function ApproveButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      size="sm"
+      isLoading={pending}
+      disabled={pending}
+      className="h-9 w-9 p-0 bg-green-600 hover:bg-green-700 text-white"
+      title="Approve"
+    >
+      {!pending && (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+    </Button>
+  );
+}
+
+function RejectButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="outline"
+      size="sm"
+      isLoading={pending}
+      disabled={pending}
+      className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+      title="Reject"
+    >
+      {!pending && (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      )}
+    </Button>
+  );
+}
+
 
 export function PlacementRequests({
   placements,
@@ -34,7 +80,7 @@ export function PlacementRequests({
       {placements.map((p) => (
         <div
           key={p.id}
-          className="group relative flex items-center gap-6 rounded-xl border border-[--color-border] bg-[--color-background] p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+          className="group relative grid grid-cols-[auto_1fr_auto_auto] gap-6 rounded-xl border border-[--color-border] bg-[--color-background] p-4 shadow-sm transition-all duration-200 hover:shadow-md"
         >
           {/* Left Column: Campaign Info */}
           <div className="flex-shrink-0 w-56">
@@ -121,34 +167,18 @@ export function PlacementRequests({
           <div className="flex-shrink-0 flex gap-2">
             <form action={approvePlacementAction}>
               <input type="hidden" name="placementId" value={p.id} />
-              <button
-                type="submit"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-white transition-all duration-200 hover:bg-green-700 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-                title="Approve"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
+              <ApproveButton />
             </form>
             <form action={rejectPlacementAction}>
               <input type="hidden" name="placementId" value={p.id} />
-              <button
-                type="submit"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[--color-border] bg-[--color-background] text-[--color-foreground] transition-all duration-200 hover:bg-red-50 hover:border-red-300 hover:text-red-700 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                title="Reject"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <RejectButton />
             </form>
           </div>
 
           {/* Message Row (if exists) */}
           {p.message && (
-            <div className="absolute left-4 right-4 -bottom-2 opacity-0 group-hover:opacity-100 group-hover:bottom-2 transition-all duration-200 pointer-events-none">
-              <div className="text-xs text-[--color-foreground] leading-relaxed line-clamp-2 bg-blue-50 rounded-lg p-2 border border-blue-200 shadow-sm">
+            <div className="col-span-full mt-3 pt-3 border-t border-[--color-border]">
+              <div className="text-xs text-[--color-foreground] leading-relaxed bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2 border border-blue-200 dark:border-blue-800">
                 <span className="font-semibold">Message:</span> {p.message}
               </div>
             </div>
