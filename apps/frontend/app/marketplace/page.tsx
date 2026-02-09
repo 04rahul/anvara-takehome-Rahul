@@ -53,6 +53,7 @@ export default async function MarketplacePage({ searchParams }: Props) {
     // Backend automatically corrects invalid page numbers!
   } catch (err) {
     error = 'Failed to load ad slots. Please try again later.';
+    // eslint-disable-next-line no-console
     console.error('Failed to load ad slots:', err);
   }
 
@@ -82,10 +83,10 @@ export default async function MarketplacePage({ searchParams }: Props) {
         pagination={
           !error && response
             ? {
-                currentPage,
-                totalPages: response.pagination.totalPages,
-                resultsPerPage: limit,
-              }
+              currentPage,
+              totalPages: response.pagination.totalPages,
+              resultsPerPage: limit,
+            }
             : null
         }
       />

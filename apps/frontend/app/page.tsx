@@ -44,14 +44,19 @@ export default async function Home() {
 
   // Fetch live marketplace data
   let totalSlots = 0;
-  let availableSlots = 0;
+
+  let publisherCount = 0;
   let featuredSlots: AdSlot[] = [];
 
   try {
-    const response = await api<{ data: AdSlot[]; pagination: { total: number } }>('/api/ad-slots?limit=3');
-    totalSlots = response.pagination.total;
-    availableSlots = response.data.filter(slot => slot.isAvailable).length;
-    featuredSlots = response.data.slice(0, 3);
+    const [slotsResponse, publishersResponse] = await Promise.all([
+      api<{ data: AdSlot[]; pagination: { total: number } }>('/api/ad-slots'),
+      api<{ count: number }>('/api/publishers/count')
+    ]);
+
+    totalSlots = slotsResponse.pagination.total;
+    publisherCount = publishersResponse.count;
+    featuredSlots = slotsResponse.data.slice(0, 3);
   } catch (error) {
     console.error('Failed to fetch marketplace data:', error);
   }
@@ -80,18 +85,15 @@ export default async function Home() {
 
             {/* Main Headline */}
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight animate-slide-up text-[--color-foreground]/80">
-              Sponsorships that feel
+              The Transparent Sponsorship
               <span className="block mt-2 text-[--color-primary]">
-                as easy as shopping online
+                Marketplace
               </span>
             </h1>
 
             {/* Subheadline */}
-            {/* Subheadline */}
-            {/* Subheadline */}
             <p className="max-w-2xl mx-auto text-lg md:text-xl text-[--color-muted] leading-relaxed animate-fade-in-delayed font-medium">
-              Discover premium ad slots, compare pricing transparently, and book with confidence.
-              Publishers get clean inventory management and fewer back-and-forth emails.
+              Sponsors request, publishers approve. A transparent marketplace built for serious partnerships.
             </p>
 
             {/* CTA Buttons */}
@@ -135,9 +137,9 @@ export default async function Home() {
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity"></div>
                 <div className="relative bg-[var(--color-card)]/90 dark:bg-[var(--color-card)]/90 backdrop-blur-sm rounded-xl p-5 border border-[var(--color-card-border)] shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105">
                   <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                    {availableSlots}
+                    {publisherCount}
                   </div>
-                  <div className="text-xs font-medium text-[var(--color-card-muted)] mt-1">Available Now</div>
+                  <div className="text-xs font-medium text-[var(--color-card-muted)] mt-1">Publishers</div>
                 </div>
               </div>
 
@@ -165,10 +167,11 @@ export default async function Home() {
             {/* Feature Highlights */}
             <ul className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto mt-8 text-sm text-[--color-muted] font-medium">
               {[
-                'Pricing upfront',
-                'Quick booking',
+                'Transparent pricing',
+                'Easy requests',
                 'Campaign dashboards',
-                'Theme-safe UI'
+                'Premium Experience'
+
               ].map((feature, i) => (
                 <li key={i} className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
                   <CheckIcon className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -310,13 +313,13 @@ export default async function Home() {
 
         {/* How It Works */}
         <section className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl -z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-3xl -z-10 shadow-xl border border-indigo-100/50 dark:border-slate-800"></div>
           <div className="p-10 md:p-16 space-y-10">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-white">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
                 How it works
               </h2>
-              <p className="mt-2 text-blue-100">Simple workflow for sponsors and publishers</p>
+              <p className="mt-2 text-slate-600 dark:text-slate-400">Simple workflow for sponsors and publishers</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -343,17 +346,17 @@ export default async function Home() {
                 <div key={i} className="relative animate-fade-in" style={{ animationDelay: `${i * 150}ms` }}>
                   <div className="text-center space-y-4">
                     <div className="relative inline-flex">
-                      <div className="absolute inset-0 bg-white/30 rounded-full blur opacity-60"></div>
-                      <div className="relative bg-white dark:bg-slate-800 rounded-full w-20 h-20 flex items-center justify-center border-4 border-white/50 shadow-xl">
+                      <div className="absolute inset-0 bg-blue-500/10 rounded-full blur opacity-60"></div>
+                      <div className="relative bg-white dark:bg-slate-800 rounded-full w-20 h-20 flex items-center justify-center border-4 border-indigo-50 dark:border-slate-700 shadow-xl">
                         <span className="text-3xl">{step.icon}</span>
                       </div>
                     </div>
-                    <div className="text-sm font-bold text-white">STEP {step.step}</div>
-                    <h3 className="text-xl font-bold text-white">{step.title}</h3>
-                    <p className="text-blue-100 text-sm leading-relaxed">{step.desc}</p>
+                    <div className="text-sm font-bold text-indigo-600 dark:text-blue-400">STEP {step.step}</div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{step.title}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{step.desc}</p>
                   </div>
                   {i < 2 && (
-                    <div className="hidden md:block absolute top-10 left-full w-full h-0.5 bg-white/30 -translate-x-1/2"></div>
+                    <div className="hidden md:block absolute top-10 left-full w-full h-0.5 bg-indigo-100 dark:bg-slate-700 -translate-x-1/2"></div>
                   )}
                 </div>
               ))}
@@ -363,12 +366,13 @@ export default async function Home() {
 
         {/* CTA Section */}
         <section className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl blur opacity-10"></div>
-          <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-10 md:p-16 text-center text-white shadow-2xl">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-20"></div>
+          <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-10 md:p-16 text-center text-white shadow-2xl border border-white/10 overflow-hidden">
+
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 relative z-10">
               Ready to get started?
             </h2>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto relative z-10">
               Join sponsors and publishers who are already using Anvara to streamline their sponsorship workflows
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

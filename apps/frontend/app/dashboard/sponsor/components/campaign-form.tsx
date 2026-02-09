@@ -5,7 +5,6 @@ import { useFormStatus } from 'react-dom';
 import { Alert } from '@/app/components/ui/alert';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { Select } from '@/app/components/ui/select';
 import { Textarea } from '@/app/components/ui/textarea';
 import {
   createCampaignAction,
@@ -67,6 +66,13 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
     }
   };
 
+  const targetCategoriesDep = Array.isArray(campaign?.targetCategories)
+    ? campaign?.targetCategories.join(',')
+    : campaign?.targetCategories;
+  const targetRegionsDep = Array.isArray(campaign?.targetRegions)
+    ? campaign?.targetRegions.join(',')
+    : campaign?.targetRegions;
+
   const initialValues: CampaignFormClientValues = useMemo(() => {
     const targetCategories = campaign?.targetCategories
       ? Array.isArray(campaign.targetCategories)
@@ -105,11 +111,9 @@ export function CampaignForm({ campaign, onSuccess, onCancel }: CampaignFormProp
     campaign?.startDate,
     campaign?.endDate,
     campaign?.status,
-    // These can be arrays, so depend on a stable string representation
-    Array.isArray(campaign?.targetCategories)
-      ? campaign?.targetCategories.join(',')
-      : campaign?.targetCategories,
-    Array.isArray(campaign?.targetRegions) ? campaign?.targetRegions.join(',') : campaign?.targetRegions,
+    targetCategoriesDep,
+    targetRegionsDep,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   ]);
 
   const [values, setValues] = useState<CampaignFormClientValues>(initialValues);

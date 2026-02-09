@@ -1,6 +1,6 @@
 import { Router, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
-import { CampaignStatus } from '../generated/prisma/client.js';
+import { CampaignStatus, Prisma } from '../generated/prisma/client.js';
 import { getParam, validateString, validateDecimal, ValidationError } from '../utils/helpers.js';
 import { requireAuth, roleMiddleware, type AuthRequest } from '../auth.js';
 
@@ -246,7 +246,7 @@ router.put(
 
       // Build update data object with only provided fields
       try {
-        const updateData: any = {};
+        const updateData: Prisma.CampaignUpdateInput = {};
 
         if (name !== undefined) {
           updateData.name = validateString(name, 'name', {
@@ -278,20 +278,15 @@ router.put(
 
         // Business rule: budget cannot be reduced below already spent amount
         if (updateData.budget !== undefined) {
-          const spentRaw: any = (existingCampaign as any).spent;
-          const spentAmount =
-            typeof spentRaw === 'number'
-              ? spentRaw
-              : typeof spentRaw?.toNumber === 'function'
-                ? spentRaw.toNumber()
-                : Number(spentRaw);
+          const spentRaw = existingCampaign.spent;
+          const spentAmount = Number(spentRaw);
 
           if (!Number.isFinite(spentAmount)) {
             console.error('Invalid spent value on campaign', { id, spentRaw });
             throw new ValidationError('Unable to validate budget against spent amount');
           }
 
-          if (updateData.budget < spentAmount) {
+          if ((updateData.budget as number) < spentAmount) {
             throw new ValidationError(`budget cannot be less than already spent (${spentAmount})`);
           }
         }

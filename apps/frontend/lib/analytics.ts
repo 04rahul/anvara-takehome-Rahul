@@ -17,34 +17,35 @@ export interface AnalyticsEvent {
  */
 export function track(event: string, properties?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return;
-  
+
   const eventData: AnalyticsEvent = {
     event,
     timestamp: Date.now(),
     ...properties,
   };
-  
+
   // Console logging for development/verification
+  // eslint-disable-next-line no-console
   console.log('[Analytics]', eventData);
-  
+
   // TODO: Integrate with GA4 or other analytics service
   // Example for GA4:
   // if (typeof window.gtag !== 'undefined') {
   //   window.gtag('event', event, properties);
   // }
-  
+
   // Store in sessionStorage for debugging
   try {
     const key = 'analytics_events';
     const existing = sessionStorage.getItem(key);
     const events = existing ? JSON.parse(existing) : [];
     events.push(eventData);
-    
+
     // Keep only last 100 events
     if (events.length > 100) {
       events.shift();
     }
-    
+
     sessionStorage.setItem(key, JSON.stringify(events));
   } catch (error) {
     // Ignore storage errors
@@ -77,7 +78,7 @@ export function trackConversion(testId: string, variant: string, conversionType:
  */
 export function getTrackedEvents(): AnalyticsEvent[] {
   if (typeof window === 'undefined') return [];
-  
+
   try {
     const key = 'analytics_events';
     const existing = sessionStorage.getItem(key);
@@ -92,7 +93,7 @@ export function getTrackedEvents(): AnalyticsEvent[] {
  */
 export function clearTrackedEvents(): void {
   if (typeof window === 'undefined') return;
-  
+
   try {
     sessionStorage.removeItem('analytics_events');
   } catch {

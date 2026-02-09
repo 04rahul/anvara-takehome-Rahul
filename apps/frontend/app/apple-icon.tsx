@@ -22,31 +22,14 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 44,
           background: `linear-gradient(135deg, ${primary}, ${secondary})`,
-          position: 'relative',
-          overflow: 'hidden',
+          fontSize: 100,
+          fontWeight: 700,
+          color: 'white',
+          borderRadius: 44,
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            inset: -40,
-            background:
-              'radial-gradient(120px 120px at 30% 20%, rgba(255,255,255,0.35), transparent 60%), radial-gradient(140px 140px at 80% 70%, rgba(15,23,42,0.25), transparent 62%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'relative',
-            width: 96,
-            height: 96,
-            borderRadius: 28,
-            background: 'rgba(15, 23, 42, 0.18)',
-            border: '2px solid rgba(255,255,255,0.35)',
-            boxShadow: '0 14px 28px rgba(0,0,0,0.22)',
-          }}
-        />
+        A
       </div>
     ),
     {

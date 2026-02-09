@@ -22,19 +22,14 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 8,
           background: `linear-gradient(135deg, ${primary}, ${secondary})`,
+          borderRadius: 8,
+          fontSize: 20,
+          fontWeight: 700,
+          color: 'white',
         }}
       >
-        <div
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: 6,
-            background: 'rgba(15, 23, 42, 0.20)',
-            border: '1px solid rgba(255,255,255,0.40)',
-          }}
-        />
+        A
       </div>
     ),
     {

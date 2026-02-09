@@ -16,8 +16,8 @@ export default async function SponsorDashboard() {
   // Get cookies for server-side API calls
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('better-auth.session_token');
-  const cookieHeader = sessionCookie 
-    ? `better-auth.session_token=${sessionCookie.value}` 
+  const cookieHeader = sessionCookie
+    ? `better-auth.session_token=${sessionCookie.value}`
     : undefined;
 
   // Verify user has 'sponsor' role
@@ -28,7 +28,7 @@ export default async function SponsorDashboard() {
 
   let campaigns: Campaign[] = [];
   let error: string | null = null;
-  
+
   try {
     if (roleData.sponsorId) {
       campaigns = await getCampaigns(roleData.sponsorId, cookieHeader);
@@ -36,6 +36,7 @@ export default async function SponsorDashboard() {
   } catch (err) {
     // Set error message - page will still render
     error = 'Failed to load campaigns. Please try again later.';
+    // eslint-disable-next-line no-console
     console.error('Failed to load campaigns:', err);
   }
 

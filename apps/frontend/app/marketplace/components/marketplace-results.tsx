@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 import type { AdSlot } from '@/lib/types';
 import { useMarketplaceFilterLayoutTest } from '@/hooks/use-ab-test';
 import { FilterControls } from './filter-controls';
@@ -35,35 +37,37 @@ export function MarketplaceResults({
   const variant = useMarketplaceFilterLayoutTest();
   const layout = variant ?? 'top';
 
-  // #region agent log H3
-  try {
-    const key = 'dbg_marketplace_results_layout_v1';
-    if (!sessionStorage.getItem(key)) {
-      if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
-        fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId: 'debug-session',
-            runId: 'pre-fix',
-            hypothesisId: 'H3',
-            location: 'app/marketplace/components/marketplace-results.tsx:MarketplaceResults',
-            message: 'MarketplaceResults computed filter layout from AB test variant',
-            data: {
-              pathname: typeof window !== 'undefined' ? window.location.pathname : 'server',
-              variant,
-              layout,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => { });
+  useEffect(() => {
+    // #region agent log H3
+    try {
+      const key = 'dbg_marketplace_results_layout_v1';
+      if (!sessionStorage.getItem(key)) {
+        if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
+          fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: 'debug-session',
+              runId: 'pre-fix',
+              hypothesisId: 'H3',
+              location: 'app/marketplace/components/marketplace-results.tsx:MarketplaceResults',
+              message: 'MarketplaceResults computed filter layout from AB test variant',
+              data: {
+                pathname: typeof window !== 'undefined' ? window.location.pathname : 'server',
+                variant,
+                layout,
+              },
+              timestamp: Date.now(),
+            }),
+          }).catch(() => { });
+        }
+        sessionStorage.setItem(key, 'true');
       }
-      sessionStorage.setItem(key, 'true');
+    } catch {
+      // ignore instrumentation errors
     }
-  } catch {
-    // ignore instrumentation errors
-  }
-  // #endregion agent log H3
+    // #endregion agent log H3
+  }, [variant, layout]);
 
   // Check if any filters are active
   const hasActiveFilters = Object.values(currentParams).some((value) => value !== undefined && value !== '');

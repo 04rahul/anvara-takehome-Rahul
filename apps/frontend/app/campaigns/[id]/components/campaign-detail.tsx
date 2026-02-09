@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { Campaign, Placement } from '@/lib/types';
-import { Alert } from '@/app/components/ui/alert';
+
 import { ButtonLink } from '@/app/components/ui/button-link';
 
 const statusColors: Record<string, string> = {

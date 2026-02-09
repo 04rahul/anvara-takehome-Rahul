@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import request from 'supertest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import app from './index.js';
@@ -60,7 +61,7 @@ vi.mock('./auth.js', () => {
   const mockRequireAuth = vi.fn((req: AuthRequest, res: any, next: any) => {
     next();
   });
-  const mockRoleMiddleware = vi.fn((roles: string[]) => (req: AuthRequest, res: any, next: any) => {
+  const mockRoleMiddleware = vi.fn((_roles: string[]) => (req: AuthRequest, res: any, next: any) => {
     next();
   });
   return {

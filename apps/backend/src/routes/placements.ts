@@ -1,7 +1,7 @@
 import { Router, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
 import { getParam } from '../utils/helpers.js';
-import { PlacementStatus } from '../generated/prisma/client.js';
+import { PlacementStatus, Prisma } from '../generated/prisma/client.js';
 import { requireAuth, roleMiddleware, type AuthRequest } from '../auth.js';
 
 const router: IRouter = Router();
@@ -17,7 +17,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     const { campaignId, status } = req.query;
 
     // Role-scoped access: sponsors see placements for their campaigns; publishers see placements for their inventory.
-    const whereClause: any = {};
+    const whereClause: Prisma.PlacementWhereInput = {};
 
     if (req.user.role === 'SPONSOR') {
       whereClause.campaign = { sponsorId: req.user.sponsorId! };
@@ -255,10 +255,10 @@ router.patch(
       }
 
       res.json(updated);
-    } catch (error: any) {
-      const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number })?.statusCode || 500;
       if (statusCode !== 500) {
-        res.status(statusCode).json({ error: error.message });
+        res.status(statusCode).json({ error: (error as Error).message });
         return;
       }
       console.error('Error updating placement:', error);

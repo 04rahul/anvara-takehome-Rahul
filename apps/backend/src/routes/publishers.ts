@@ -22,6 +22,17 @@ router.get('/', async (_req: Request, res: Response) => {
   }
 });
 
+// GET /api/publishers/count - Get total publisher count
+router.get('/count', async (_req: Request, res: Response) => {
+  try {
+    const count = await prisma.publisher.count();
+    res.json({ count });
+  } catch (error) {
+    console.error('Error fetching publisher count:', error);
+    res.status(500).json({ error: 'Failed to fetch publisher count' });
+  }
+});
+
 // GET /api/publishers/:id - Get single publisher with ad slots
 router.get('/:id', async (req: Request, res: Response) => {
   try {

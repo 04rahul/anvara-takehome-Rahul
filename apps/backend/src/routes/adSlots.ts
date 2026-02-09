@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
-import { AdSlotType, PricingModel } from '../generated/prisma/client.js';
+import { AdSlotType, PricingModel, Prisma } from '../generated/prisma/client.js';
 import {
   getParam,
   validateString,
@@ -26,7 +26,7 @@ router.get('/', async (req: Request, res: Response) => {
     const resolvedPublisherId = publisherId ? getParam(publisherId) : '';
     const isPublicMarketplaceQuery = !resolvedPublisherId;
 
-    const whereClause: any = {
+    const whereClause: Prisma.AdSlotWhereInput = {
       ...(type && {
         type: type as string as AdSlotType,
       }),
@@ -43,7 +43,7 @@ router.get('/', async (req: Request, res: Response) => {
     // Category filter - filter by publisher category
     if (category && typeof category === 'string') {
       whereClause.publisher = {
-        ...whereClause.publisher,
+        ...(whereClause.publisher as Prisma.PublisherWhereInput),
         category: {
           equals: category,
           mode: 'insensitive',
@@ -73,7 +73,7 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     // Dynamic sorting
-    let orderBy: any = { basePrice: 'desc' }; // default
+    let orderBy: Prisma.AdSlotOrderByWithRelationInput = { basePrice: 'desc' }; // default
     if (sortBy === 'price-asc') orderBy = { basePrice: 'asc' };
     if (sortBy === 'price-desc') orderBy = { basePrice: 'desc' };
     if (sortBy === 'name-asc') orderBy = { name: 'asc' };
@@ -180,10 +180,10 @@ router.post(
           description:
             description !== undefined && description !== null
               ? validateString(description, 'description', {
-                  required: false,
-                  maxLength: 1000,
-                  allowEmpty: true,
-                })
+                required: false,
+                maxLength: 1000,
+                allowEmpty: true,
+              })
               : null,
           type: (() => {
             const validTypes = Object.values(AdSlotType);
@@ -197,30 +197,30 @@ router.post(
               ? null
               : width !== undefined
                 ? validateInteger(width, 'width', {
-                    required: false,
-                    min: 1,
-                    max: 10000,
-                    allowNull: true,
-                  })
+                  required: false,
+                  min: 1,
+                  max: 10000,
+                  allowNull: true,
+                })
                 : undefined,
           height:
             type === AdSlotType.PODCAST
               ? null
               : height !== undefined
                 ? validateInteger(height, 'height', {
-                    required: false,
-                    min: 1,
-                    max: 10000,
-                    allowNull: true,
-                  })
+                  required: false,
+                  min: 1,
+                  max: 10000,
+                  allowNull: true,
+                })
                 : undefined,
           position:
             position !== undefined && position !== null
               ? validateString(position, 'position', {
-                  required: false,
-                  maxLength: 100,
-                  allowEmpty: true,
-                })
+                required: false,
+                maxLength: 100,
+                allowEmpty: true,
+              })
               : null,
           basePrice: validateDecimal(basePrice, 'basePrice', {
             required: true,
@@ -578,7 +578,7 @@ router.put(
 
       // Build update data object with only provided fields
       try {
-        const updateData: any = {};
+        const updateData: Prisma.AdSlotUpdateInput = {};
 
         if (name !== undefined) {
           updateData.name = validateString(name, 'name', {
@@ -594,10 +594,10 @@ router.put(
             description === null || description === ''
               ? null
               : validateString(description, 'description', {
-                  required: false,
-                  maxLength: 1000,
-                  allowEmpty: true,
-                });
+                required: false,
+                maxLength: 1000,
+                allowEmpty: true,
+              });
         }
 
         if (type !== undefined) {
@@ -641,10 +641,10 @@ router.put(
             position === null || position === ''
               ? null
               : validateString(position, 'position', {
-                  required: false,
-                  maxLength: 100,
-                  allowEmpty: true,
-                });
+                required: false,
+                maxLength: 100,
+                allowEmpty: true,
+              });
         }
 
         if (basePrice !== undefined) {

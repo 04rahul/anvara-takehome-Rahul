@@ -165,7 +165,7 @@ export function validateInteger(
     if (required) {
       throw new ValidationError(`${fieldName} is required`);
     }
-    return allowNull ? null : (undefined as any);
+    return allowNull ? null : (undefined as unknown as number);
   }
 
   // Convert to number

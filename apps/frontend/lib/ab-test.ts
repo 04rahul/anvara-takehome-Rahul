@@ -20,14 +20,14 @@ const COOKIE_EXPIRY_DAYS = 30;
  */
 function getCookie(name: string): string | null {
   if (typeof window === 'undefined') return null;
-  
+
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  
+
   if (parts.length === 2) {
     return parts.pop()?.split(';').shift() || null;
   }
-  
+
   return null;
 }
 
@@ -36,11 +36,11 @@ function getCookie(name: string): string | null {
  */
 function setCookie(name: string, value: string, days: number): void {
   if (typeof window === 'undefined') return;
-  
+
   const date = new Date();
   date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
   const expires = `expires=${date.toUTCString()}`;
-  
+
   document.cookie = `${name}=${value};${expires};path=/;SameSite=Lax`;
 }
 
@@ -49,7 +49,7 @@ function setCookie(name: string, value: string, days: number): void {
  */
 function deleteCookie(name: string): void {
   if (typeof window === 'undefined') return;
-  
+
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
 }
 
@@ -58,16 +58,14 @@ function deleteCookie(name: string): void {
  */
 function assignVariant(config: ABTestConfig): string {
   const { variants, weights } = config;
-  
+
   // Validate weights sum to 100
   const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-  if (Math.abs(totalWeight - 100) > 0.01) {
-    console.warn('AB Test weights should sum to 100, got:', totalWeight);
-  }
-  
+
+
   // Generate random number between 0 and 100
   const random = Math.random() * 100;
-  
+
   // Find which variant this falls into
   let cumulativeWeight = 0;
   for (let i = 0; i < variants.length; i++) {
@@ -76,7 +74,7 @@ function assignVariant(config: ABTestConfig): string {
       return variants[i];
     }
   }
-  
+
   // Fallback to first variant (shouldn't reach here)
   return variants[0];
 }
@@ -90,19 +88,19 @@ export function getVariant(testId: string, config: ABTestConfig): string | null 
     // Server-side: return null (will be hydrated on client)
     return null;
   }
-  
+
   const cookieName = `${COOKIE_PREFIX}${testId}`;
-  
+
   // Check if user already has an assignment
   const existingVariant = getCookie(cookieName);
   if (existingVariant && config.variants.includes(existingVariant)) {
     return existingVariant;
   }
-  
+
   // Assign new variant
   const variant = assignVariant(config);
   setCookie(cookieName, variant, COOKIE_EXPIRY_DAYS);
-  
+
   return variant;
 }
 
@@ -111,7 +109,7 @@ export function getVariant(testId: string, config: ABTestConfig): string | null 
  */
 export function clearVariant(testId?: string): void {
   if (typeof window === 'undefined') return;
-  
+
   if (testId) {
     // Clear specific test
     const cookieName = `${COOKIE_PREFIX}${testId}`;
@@ -133,10 +131,10 @@ export function clearVariant(testId?: string): void {
  */
 export function getAllVariants(): Record<string, string> {
   if (typeof window === 'undefined') return {};
-  
+
   const variants: Record<string, string> = {};
   const cookies = document.cookie.split(';');
-  
+
   cookies.forEach((cookie) => {
     const [name, value] = cookie.split('=').map((s) => s.trim());
     if (name.startsWith(COOKIE_PREFIX)) {
@@ -144,7 +142,7 @@ export function getAllVariants(): Record<string, string> {
       variants[testId] = value;
     }
   });
-  
+
   return variants;
 }
 
@@ -153,7 +151,7 @@ export function getAllVariants(): Record<string, string> {
  */
 export function forceVariant(testId: string, variant: string): void {
   if (typeof window === 'undefined') return;
-  
+
   const cookieName = `${COOKIE_PREFIX}${testId}`;
   setCookie(cookieName, variant, COOKIE_EXPIRY_DAYS);
 }

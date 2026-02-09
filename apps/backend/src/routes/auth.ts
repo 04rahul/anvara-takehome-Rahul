@@ -1,5 +1,4 @@
 import { Router, type Request, type Response, type IRouter } from 'express';
-import { prisma } from '../db.js';
 import { getParam } from '../utils/helpers.js';
 import { requireAuth, type AuthRequest } from '../auth.js';
 
@@ -47,7 +46,6 @@ router.get('/role/:userId', requireAuth, async (req: AuthRequest, res: Response)
     }
 
     // ZERO DB QUERIES: All data is already cached in req.user from requireAuth!
-    let role: 'sponsor' | 'publisher' | null = null;
     let roleData: Record<string, unknown> = { role: null };
 
     if (req.user.role === 'SPONSOR' && req.user.sponsorId) {

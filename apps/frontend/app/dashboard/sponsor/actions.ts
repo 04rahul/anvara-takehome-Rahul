@@ -4,6 +4,19 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { createCampaign, updateCampaign, deleteCampaign } from '@/lib/api';
 
+interface CampaignData {
+  name: string;
+  description?: string | null;
+  budget: number;
+  cpmRate?: number | null;
+  cpcRate?: number | null;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  targetCategories?: string[] | null;
+  targetRegions?: string[] | null;
+}
+
 export interface CampaignFormState {
   success?: boolean;
   error?: string;
@@ -129,7 +142,7 @@ export async function createCampaignAction(
     }
 
     // Prepare data for API
-    const data: any = {
+    const data: CampaignData = {
       name: name.trim(),
       budget: Number(budget),
       startDate: new Date(startDate).toISOString(),
@@ -182,6 +195,7 @@ export async function createCampaignAction(
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error creating campaign:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to create campaign',
@@ -311,7 +325,7 @@ export async function updateCampaignAction(
     }
 
     // Prepare data for API
-    const data: any = {
+    const data: CampaignData = {
       name: name.trim(),
       budget: Number(budget),
     };
@@ -379,6 +393,7 @@ export async function updateCampaignAction(
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error updating campaign:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to update campaign',
@@ -431,6 +446,7 @@ export async function deleteCampaignAction(
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error deleting campaign:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to delete campaign',

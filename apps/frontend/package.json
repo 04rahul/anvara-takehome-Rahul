@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev -p 3847",
     "build": "dotenv -e ../../.env -- next build",
-    "start": "next start -p 3847",
+    "start": "dotenv -e ../../.env -- next start -p 3847",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest",

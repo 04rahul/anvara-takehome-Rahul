@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getAllVariants, clearVariant, forceVariant } from '@/lib/ab-test';
 import { AB_TESTS } from '@/lib/ab-test-config';
-import { getTrackedEvents, clearTrackedEvents } from '@/lib/analytics';
+import { getTrackedEvents, clearTrackedEvents, type AnalyticsEvent } from '@/lib/analytics';
 
 /**
  * A/B Test Debug Panel
@@ -17,7 +17,7 @@ import { getTrackedEvents, clearTrackedEvents } from '@/lib/analytics';
 export function ABTestDebugger() {
   const [isOpen, setIsOpen] = useState(false);
   const [variants, setVariants] = useState<Record<string, string>>({});
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -76,6 +76,7 @@ export function ABTestDebugger() {
       setVariants(nextVariants);
       setEvents(nextEvents);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, refreshKey]);
 
   const handleForceVariant = (testId: string, variant: string) => {
@@ -157,8 +158,8 @@ export function ABTestDebugger() {
                             key={variant}
                             onClick={() => handleForceVariant(testId, variant)}
                             className={`rounded px-2 py-1 text-xs font-medium transition-colors ${currentVariant === variant
-                                ? 'bg-purple-600 text-white'
-                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
                               }`}
                           >
                             {variant}
@@ -188,14 +189,14 @@ export function ABTestDebugger() {
                     {events.map((event, idx) => (
                       <div key={idx} className="text-xs font-mono text-gray-700">
                         <span className="text-purple-600 font-semibold">{event.event}</span>
-                        {event.testId && (
+                        {!!event.testId && (
                           <>
-                            {' '}· <span className="text-gray-900">{event.testId}</span>
+                            {' '}· <span className="text-gray-900">{String(event.testId)}</span>
                           </>
                         )}
-                        {event.variant && (
+                        {!!event.variant && (
                           <>
-                            {' '}→ <span className="text-green-600 font-semibold">{event.variant}</span>
+                            {' '}→ <span className="text-green-600 font-semibold">{String(event.variant)}</span>
                           </>
                         )}
                       </div>

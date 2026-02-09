@@ -35,7 +35,7 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
       try {
         const key = 'dbg_ab_useABTest_marketplace-filter-layout_v1';
         if (!sessionStorage.getItem(key)) {
-          // #region agent log H3/H4
+          
           if (process.env.NEXT_PUBLIC_ANALYTICS_URL) {
             fetch(`${process.env.NEXT_PUBLIC_ANALYTICS_URL}/ingest/3f0b1e04-39fc-4b7e-98fa-50c590796815`, {
               method: 'POST',
@@ -64,6 +64,7 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
         }
       } catch {
         // ignore instrumentation errors
+        
       }
     }
 
@@ -97,7 +98,7 @@ export function useABTest(testId: string, config: ABTestConfig): string | null {
               }),
             }).catch(() => { });
           }
-          // #endregion agent log H3/H4
+          
           sessionStorage.setItem(key, 'true');
         }
       } catch {
