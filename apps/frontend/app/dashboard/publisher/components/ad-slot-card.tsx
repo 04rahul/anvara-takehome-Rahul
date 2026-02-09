@@ -107,6 +107,7 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
                   title: 'Booked placement',
                   description: 'This placement is already booked and cannot be edited.',
                   variant: 'default',
+                  className: 'bg-gray-100 border-gray-200 text-gray-900',
                 });
                 return;
               }
@@ -126,6 +127,7 @@ export function AdSlotCard({ adSlot }: AdSlotCardProps) {
                   title: 'Booked placement',
                   description: 'This placement is already booked and cannot be deleted.',
                   variant: 'default',
+                  className: 'bg-gray-100 border-gray-200 text-gray-900',
                 });
                 return;
               }

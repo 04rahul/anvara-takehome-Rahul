@@ -11,6 +11,7 @@ export interface ToastOptions {
   description?: string;
   variant?: ToastVariant;
   durationMs?: number;
+  className?: string;
 }
 
 interface ToastItem extends Required<ToastOptions> {
@@ -32,6 +33,7 @@ export function toast(options: ToastOptions) {
     description: options.description ?? '',
     variant: options.variant ?? 'default',
     durationMs: options.durationMs ?? (options.variant === 'error' ? 7000 : 4000),
+    className: options.className ?? '',
   });
 }
 
@@ -71,7 +73,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             'group relative w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border p-4 shadow-lg',
             'data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:zoom-in-95',
             'data-[state=closed]:opacity-0',
-            variantClasses[t.variant]
+            'data-[state=closed]:opacity-0',
+            variantClasses[t.variant],
+            t.className
           )}
         >
           <div className="pr-8">
